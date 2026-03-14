@@ -1,0 +1,127 @@
+'use client';
+
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Search, Filter, Download, Plus, Package, AlertTriangle, TrendingDown } from 'lucide-react';
+
+const inventoryItems = [
+  { id: 1, name: 'Basmati Rice 5kg', sku: 'RCE001', category: 'Groceries', stock: 45, reorderLevel: 10, price: 250, status: 'In Stock' },
+  { id: 2, name: 'Sunflower Oil 1L', sku: 'OIL002', category: 'Groceries', stock: 8, reorderLevel: 15, price: 150, status: 'Low Stock' },
+  { id: 3, name: 'Tata Salt 1kg', sku: 'SLT003', category: 'Groceries', stock: 120, reorderLevel: 20, price: 20, status: 'In Stock' },
+  { id: 4, name: 'Red Label Tea 250g', sku: 'TEA004', category: 'Beverages', stock: 3, reorderLevel: 10, price: 200, status: 'Critical' },
+  { id: 5, name: 'Surf Excel 1kg', sku: 'DET005', category: 'Household', stock: 67, reorderLevel: 15, price: 220, status: 'In Stock' },
+  { id: 6, name: 'Amul Butter 500g', sku: 'BTR006', category: 'Dairy', stock: 12, reorderLevel: 10, price: 280, status: 'In Stock' },
+  { id: 7, name: 'Maggi Noodles 4pk', sku: 'NDL007', category: 'Groceries', stock: 5, reorderLevel: 20, price: 56, status: 'Low Stock' },
+  { id: 8, name: 'Colgate 200g', sku: 'TPS008', category: 'Personal Care', stock: 34, reorderLevel: 10, price: 105, status: 'In Stock' },
+  { id: 9, name: 'Dettol Soap 125g', sku: 'SOP009', category: 'Personal Care', stock: 0, reorderLevel: 15, price: 55, status: 'Out of Stock' },
+  { id: 10, name: 'Parle-G Biscuit', sku: 'BSC010', category: 'Snacks', stock: 200, reorderLevel: 50, price: 10, status: 'In Stock' },
+];
+
+export default function InventoryPage() {
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
+
+  const filtered = inventoryItems.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase()) || item.sku.toLowerCase().includes(search.toLowerCase());
+    if (filter === 'all') return matchesSearch;
+    if (filter === 'low') return matchesSearch && (item.status === 'Low Stock' || item.status === 'Critical');
+    if (filter === 'out') return matchesSearch && item.status === 'Out of Stock';
+    return matchesSearch;
+  });
+
+  const lowStockCount = inventoryItems.filter(i => i.status === 'Low Stock' || i.status === 'Critical').length;
+  const outStockCount = inventoryItems.filter(i => i.status === 'Out of Stock').length;
+  const totalValue = inventoryItems.reduce((sum, i) => sum + i.price * i.stock, 0);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-extrabold text-text-primary">Inventory</h1>
+          <p className="text-sm text-text-muted mt-0.5">{inventoryItems.length} products · Stock value: ₹{totalValue.toLocaleString()}</p>
+        </div>
+        <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-dark shadow-md transition-all">
+          <Plus className="w-4 h-4" /> Add Product
+        </button>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: 'Total Products', value: inventoryItems.length, icon: Package, color: 'text-primary bg-primary/10' },
+          { label: 'Low Stock Items', value: lowStockCount, icon: AlertTriangle, color: 'text-accent-amber bg-accent-amber/10' },
+          { label: 'Out of Stock', value: outStockCount, icon: TrendingDown, color: 'text-error bg-error/10' },
+        ].map((stat, i) => (
+          <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
+            className="bg-white rounded-xl p-4 border border-border/50 flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.color}`}>
+              <stat.icon className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-extrabold text-text-primary">{stat.value}</p>
+              <p className="text-xs text-text-muted">{stat.label}</p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            placeholder="Search products..." />
+        </div>
+        <div className="flex gap-1.5">
+          {[{ id: 'all', label: 'All' }, { id: 'low', label: 'Low Stock' }, { id: 'out', label: 'Out of Stock' }].map(f => (
+            <button key={f.id} onClick={() => setFilter(f.id)}
+              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                filter === f.id ? 'bg-primary text-white' : 'bg-white border border-border text-text-muted hover:border-primary/30'
+              }`}>{f.label}</button>
+          ))}
+        </div>
+        <button className="flex items-center gap-2 px-3 py-2 bg-white border border-border rounded-lg text-xs font-medium text-text-muted hover:border-primary/30">
+          <Download className="w-3.5 h-3.5" /> Export
+        </button>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-xl border border-border/50 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-page-bg border-b border-border/50">
+              <th className="text-left py-3 px-4 font-semibold text-text-muted text-xs">Product</th>
+              <th className="text-left py-3 px-4 font-semibold text-text-muted text-xs">SKU</th>
+              <th className="text-left py-3 px-4 font-semibold text-text-muted text-xs">Category</th>
+              <th className="text-left py-3 px-4 font-semibold text-text-muted text-xs">Stock</th>
+              <th className="text-left py-3 px-4 font-semibold text-text-muted text-xs">Reorder Level</th>
+              <th className="text-left py-3 px-4 font-semibold text-text-muted text-xs">Price</th>
+              <th className="text-left py-3 px-4 font-semibold text-text-muted text-xs">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((item) => (
+              <tr key={item.id} className="border-b border-border/30 hover:bg-page-bg/50 transition-colors">
+                <td className="py-3 px-4 font-medium">{item.name}</td>
+                <td className="py-3 px-4 text-text-muted">{item.sku}</td>
+                <td className="py-3 px-4 text-text-muted">{item.category}</td>
+                <td className="py-3 px-4 font-medium">{item.stock}</td>
+                <td className="py-3 px-4 text-text-muted">{item.reorderLevel}</td>
+                <td className="py-3 px-4 font-medium">₹{item.price}</td>
+                <td className="py-3 px-4">
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                    item.status === 'In Stock' ? 'bg-green-50 text-secondary-green' :
+                    item.status === 'Low Stock' ? 'bg-amber-50 text-accent-amber' :
+                    item.status === 'Critical' ? 'bg-red-50 text-error' :
+                    'bg-gray-100 text-text-muted'
+                  }`}>{item.status}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
