@@ -1,0 +1,321 @@
+// ============================================
+// CRAFTORY POS - Prisma Schema
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// 1. SHOP (Multi-tenant Top Level)
+// ============================================
+model Shop {
+  id               String   @id @default(cuid())
+  shopName         String
+  ownerName        String
+  email            String   @unique
+  phone            String?
+  subscriptionPlan String   @default("FREE")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  stores           Store[]
+  users            User[]
+  subscriptions    Subscription[]
+  products         Product[]
+  categories       Category[]
+  customers        Customer[]
+  sales            Sale[]
+  suppliers        Supplier[]
+  purchaseOrders   PurchaseOrder[]
+
+  @@map("shops")
+}
+
+// ============================================
+// 2. SUBSCRIPTION
+// ============================================
+model Subscription {
+  id        String   @id @default(cuid())
+  plan      String
+  status    String   // ACTIVE, EXPIRED, CANCELLED
+  startDate DateTime
+  endDate   DateTime
+  
+  shopId    String
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+// ============================================
+// 3. STORE (Multi-store locations)
+// ============================================
+model Store {
+  id        String   @id @default(cuid())
+  name      String
+  location  String?
+  
+  shopId    String
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  
+  managerId String?
+  manager   User?    @relation("StoreManager", fields: [managerId], references: [id])
+
+  users     User[]   @relation("StoreStaff")
+  sales     Sale[]
+
+  @@map("stores")
+}
+
+// ============================================
+// 4. USER (Staff & Owners)
+// ============================================
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(CASHIER)
+  isVerified   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  
+  shopId       String
+  shop         Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  
+  storeId      String?
+  store        Store?   @relation("StoreStaff", fields: [storeId], references: [id])
+  
+  managedStores Store[]  @relation("StoreManager")
+  sales        Sale[]
+  performance  StaffPerformance[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  CASHIER
+}
+
+// ============================================
+// 5. CATEGORY
+// ============================================
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  
+  shopId    String
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  
+  products  Product[]
+
+  @@map("categories")
+}
+
+// ============================================
+// 6. SUPPLIER
+// ============================================
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+
+  shopId    String
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  products       Product[]
+  purchaseOrders PurchaseOrder[]
+
+  @@map("suppliers")
+}
+
+// ============================================
+// 7. PRODUCT
+// ============================================
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  barcode       String?
+  price         Float
+  costPrice     Float?
+  stockQuantity Int      @default(0)
+  imageUrl      String?
+  createdAt     DateTime @default(now())
+
+  shopId        String
+  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  
+  categoryId    String?
+  category      Category? @relation(fields: [categoryId], references: [id])
+  
+  supplierId    String?
+  supplier      Supplier? @relation(fields: [supplierId], references: [id])
+
+  inventoryLogs InventoryLog[]
+  saleItems     SaleItem[]
+  purchaseItems PurchaseItem[]
+
+  @@map("products")
+}
+
+// ============================================
+// 8. INVENTORY LOGS
+// ============================================
+model InventoryLog {
+  id          String   @id @default(cuid())
+  changeType  String   // ADD, REMOVE, ADJUST
+  quantity    Int
+  reason      String?
+  createdAt   DateTime @default(now())
+
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("inventory_logs")
+}
+
+// ============================================
+// 9. CUSTOMER
+// ============================================
+model Customer {
+  id         String   @id @default(cuid())
+  name       String
+  phone      String
+  email      String?
+  totalSpent Float    @default(0)
+  createdAt  DateTime @default(now())
+
+  shopId     String
+  shop       Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  sales      Sale[]
+
+  @@unique([shopId, phone])
+  @@map("customers")
+}
+
+// ============================================
+// 10. SALE (Invoice)
+// ============================================
+model Sale {
+  id            String   @id @default(cuid())
+  invoiceNumber String
+  subtotal      Float
+  tax           Float    @default(0)
+  discount      Float    @default(0)
+  total         Float
+  paymentMethod String   // CASH, UPI, CARD
+  createdAt     DateTime @default(now())
+
+  shopId        String
+  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  storeId       String?
+  store         Store?   @relation(fields: [storeId], references: [id])
+
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id])
+
+  staffId       String
+  staff         User     @relation(fields: [staffId], references: [id])
+
+  items         SaleItem[]
+
+  @@map("sales")
+}
+
+// ============================================
+// 11. SALE ITEM
+// ============================================
+model SaleItem {
+  id        String   @id @default(cuid())
+  quantity  Int
+  price     Float
+  total     Float
+
+  saleId    String
+  sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@map("sale_items")
+}
+
+// ============================================
+// 12. PURCHASE ORDER
+// ============================================
+model PurchaseOrder {
+  id          String   @id @default(cuid())
+  totalAmount Float    @default(0)
+  status      String   // PENDING, COMPLETED, CANCELLED
+  createdAt   DateTime @default(now())
+
+  shopId      String
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  supplierId  String
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+
+  items       PurchaseItem[]
+
+  @@map("purchase_orders")
+}
+
+// ============================================
+// 13. PURCHASE ITEM
+// ============================================
+model PurchaseItem {
+  id              String        @id @default(cuid())
+  quantity        Int
+  costPrice       Float
+
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  productId       String
+  product         Product       @relation(fields: [productId], references: [id])
+
+  @@map("purchase_items")
+}
+
+// ============================================
+// 14. STAFF PERFORMANCE
+// ============================================
+model StaffPerformance {
+  id           String   @id @default(cuid())
+  salesCount   Int      @default(0)
+  totalRevenue Float    @default(0)
+  date         DateTime @db.Date
+
+  staffId      String
+  staff        User     @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, date])
+  @@map("staff_performance")
+}
+
+// ============================================
+// 15. VERIFICATION TOKEN (OTP & Reset Links)
+// ============================================
+model VerificationToken {
+  id        String   @id @default(cuid())
+  email     String?  // For password reset
+  phone     String?  // For OTP
+  token     String
+  type      String   // OTP, RESET_PASSWORD
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([phone, token])
+  @@unique([email, token])
+  @@map("verification_tokens")
+}
