@@ -261,6 +261,8 @@ export default function Navbar() {
                         <button
                           onClick={() => setOpenDropdown(openDropdown === link.label ? null : link.label)}
                           className="p-1"
+                          aria-label={`Toggle ${link.label} menu`}
+                          aria-expanded={openDropdown === link.label}
                         >
                           <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown === link.label ? 'rotate-180' : ''}`} />
                         </button>
@@ -269,6 +271,7 @@ export default function Navbar() {
                       <button
                         onClick={() => setOpenDropdown(openDropdown === link.label ? null : link.label)}
                         className="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium text-text-primary rounded-lg hover:bg-gray-50"
+                        aria-expanded={openDropdown === link.label}
                       >
                         {link.label}
                         <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown === link.label ? 'rotate-180' : ''}`} />
