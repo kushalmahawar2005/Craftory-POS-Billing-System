@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, Smartphone, Percent, User } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, Smartphone, Percent, User, X, QrCode, Printer, CheckCircle2, FileText } from 'lucide-react';
 
 const productCatalog = [
   { id: 1, name: 'Basmati Rice 5kg', price: 250, category: 'Groceries', sku: 'RCE001' },
@@ -22,11 +23,17 @@ const productCatalog = [
 type CartItem = { id: number; name: string; price: number; qty: number };
 
 export default function POSPage() {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [customerName, setCustomerName] = useState('');
+
+  // Modals state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [cashTendered, setCashTendered] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const filtered = productCatalog.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase())
@@ -55,8 +62,44 @@ export default function POSPage() {
   const gst = (subtotal - discountAmount) * 0.18;
   const total = subtotal - discountAmount + gst;
 
+  // Listen for return from checkout
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('status') === 'timeout') {
+      alert("Payment checkout session expired after 5 minutes.");
+      router.replace('/app/pos'); // Clear param after alert
+    }
+  }, [searchParams, router]);
+
+  const handleCompleteSale = () => {
+    // Navigate to the dedicated checkout page with the query params
+    const amountStr = total.toFixed(2);
+    
+    // Save current order data to sessionStorage to recover it after checkout redirects back
+    sessionStorage.setItem('pos_cart', JSON.stringify(cart));
+    sessionStorage.setItem('pos_discount', discount.toString());
+    sessionStorage.setItem('pos_customer', customerName);
+    
+    router.push(`/app/checkout?amount=${amountStr}`);
+  };
+
+  const startNewSale = () => {
+    setCart([]);
+    setCustomerName('');
+    setDiscount(0);
+    setPaymentMethod('cash');
+    setCashTendered('');
+    
+    // Clear storage
+    sessionStorage.removeItem('pos_cart');
+    sessionStorage.removeItem('pos_discount');
+    sessionStorage.removeItem('pos_customer');
+    
+    router.replace('/app/pos'); // Clear success params
+  };
+
   return (
-    <div className="flex gap-4 h-[calc(100vh-112px)]">
+    <div className="flex gap-4 h-[calc(100vh-112px)] relative">
       {/* Product Grid */}
       <div className="flex-1 flex flex-col min-w-0">
         <div className="flex items-center gap-3 mb-4">
@@ -143,7 +186,7 @@ export default function POSPage() {
         </div>
 
         {/* Summary */}
-        <div className="border-t border-border/50 p-4 space-y-2 bg-page-bg rounded-b-xl">
+        <div className="border-t border-border/50 p-4 space-y-2 bg-page-bg rounded-b-xl border border-border/50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
           <div className="flex items-center gap-2 mb-2">
             <Percent className="w-3.5 h-3.5 text-text-muted" />
             <input
@@ -176,7 +219,7 @@ export default function POSPage() {
             ].map(pm => (
               <button key={pm.id} onClick={() => setPaymentMethod(pm.id)}
                 className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-lg text-[10px] font-medium border transition-all ${
-                  paymentMethod === pm.id ? 'border-primary bg-primary-light text-primary' : 'border-border text-text-muted hover:border-primary/30'
+                  paymentMethod === pm.id ? 'border-primary bg-primary-light text-primary' : 'border-border bg-white text-text-muted hover:border-primary/30'
                 }`}>
                 <pm.icon className="w-4 h-4" />
                 {pm.label}
@@ -185,13 +228,16 @@ export default function POSPage() {
           </div>
 
           <button
+            onClick={handleCompleteSale}
             disabled={cart.length === 0}
-            className="w-full py-2.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-dark shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-full mt-2 py-2.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-dark shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            Complete Sale · ₹{total.toFixed(2)}
+            Charge · ₹{total.toFixed(2)}
           </button>
         </div>
       </div>
+
+      {/* No more modals here! Navigated flow handles Checkout -> Receipt */}
     </div>
   );
 }

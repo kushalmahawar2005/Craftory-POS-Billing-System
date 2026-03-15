@@ -1,8 +1,10 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, Filter, Download, Plus, Package, AlertTriangle, TrendingDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Filter, Download, Plus, Package, AlertTriangle, TrendingDown, X, Bell, RefreshCw } from 'lucide-react';
 
 const inventoryItems = [
   { id: 1, name: 'Basmati Rice 5kg', sku: 'RCE001', category: 'Groceries', stock: 45, reorderLevel: 10, price: 250, status: 'In Stock' },
@@ -18,8 +20,10 @@ const inventoryItems = [
 ];
 
 export default function InventoryPage() {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
+  const [showAlerts, setShowAlerts] = useState(false);
 
   const filtered = inventoryItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase()) || item.sku.toLowerCase().includes(search.toLowerCase());
@@ -40,7 +44,7 @@ export default function InventoryPage() {
           <h1 className="text-2xl font-extrabold text-text-primary">Inventory</h1>
           <p className="text-sm text-text-muted mt-0.5">{inventoryItems.length} products · Stock value: ₹{totalValue.toLocaleString()}</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-dark shadow-md transition-all">
+        <button onClick={() => router.push('/app/products')} className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-dark shadow-[0_4px_14px_0_rgba(0,118,255,0.39)] transition-all">
           <Plus className="w-4 h-4" /> Add Product
         </button>
       </div>
@@ -48,12 +52,13 @@ export default function InventoryPage() {
       {/* Quick Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Total Products', value: inventoryItems.length, icon: Package, color: 'text-primary bg-primary/10' },
-          { label: 'Low Stock Items', value: lowStockCount, icon: AlertTriangle, color: 'text-accent-amber bg-accent-amber/10' },
-          { label: 'Out of Stock', value: outStockCount, icon: TrendingDown, color: 'text-error bg-error/10' },
+          { label: 'Total Products', value: inventoryItems.length, icon: Package, color: 'text-primary bg-primary/10', action: null },
+          { label: 'Low Stock Items', value: lowStockCount, icon: AlertTriangle, color: 'text-accent-amber bg-accent-amber/10', action: () => setShowAlerts(true) },
+          { label: 'Out of Stock', value: outStockCount, icon: TrendingDown, color: 'text-error bg-error/10', action: () => setShowAlerts(true) },
         ].map((stat, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-            className="bg-white rounded-xl p-4 border border-border/50 flex items-center gap-3">
+            onClick={stat.action || undefined}
+            className={`bg-white rounded-xl p-4 border border-border/50 flex items-center gap-3 ${stat.action ? 'cursor-pointer hover:border-primary/50 hover:shadow-md transition-all' : ''}`}>
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.color}`}>
               <stat.icon className="w-5 h-5" />
             </div>
@@ -122,6 +127,58 @@ export default function InventoryPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Inventory Alerts Slide-over Modal */}
+      <AnimatePresence>
+        {showAlerts && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm"
+              onClick={() => setShowAlerts(false)}
+            />
+            <motion.div
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col border-l border-border"
+            >
+              <div className="px-6 py-5 border-b border-border flex items-center justify-between bg-page-bg/50">
+                <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                  <Bell className="w-5 h-5 text-accent-amber animate-bounce" /> Inventory Alerts
+                </h2>
+                <button onClick={() => setShowAlerts(false)} className="p-2 rounded-full hover:bg-gray-200 text-text-muted transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <p className="text-sm text-text-muted mb-6">These items are falling below their required stock levels and need immediate reordering.</p>
+                
+                {inventoryItems.filter(i => i.status === 'Out of Stock' || i.status === 'Critical' || i.status === 'Low Stock').map(item => (
+                  <div key={item.id} className="bg-white border border-border rounded-xl p-4 flex items-center justify-between shadow-sm">
+                    <div>
+                      <h4 className="font-bold text-text-primary">{item.name}</h4>
+                      <p className="text-xs text-text-muted mt-0.5">SKU: {item.sku} | Reorder: {item.reorderLevel}</p>
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-2">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        item.status === 'Out of Stock' ? 'bg-error text-white' :
+                        item.status === 'Critical' ? 'bg-red-100 text-error' :
+                        'bg-amber-100 text-accent-amber'
+                      }`}>
+                        {item.stock} left
+                      </span>
+                      <button className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
+                        <RefreshCw className="w-3 h-3" /> Order Mix
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Store, FileText, Package, ShoppingCart, Settings, ArrowRight, ArrowLeft,
@@ -17,6 +17,7 @@ const steps = [
 ];
 
 export default function OnboardingPage() {
+  const [mounted, setMounted] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [storeData, setStoreData] = useState({
     businessName: '', businessType: '', address: '', city: '', state: '', pincode: '', language: 'English',
@@ -25,12 +26,20 @@ export default function OnboardingPage() {
     gstRegistered: '', gstin: '', registrationType: '', legalName: '', tradeName: '', registeredOn: '',
   });
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const next = () => { if (currentStep < 6) setCurrentStep(currentStep + 1); };
   const prev = () => { if (currentStep > 1) setCurrentStep(currentStep - 1); };
   const finish = () => { window.location.href = '/app/dashboard'; };
 
   const inputClass = "w-full px-4 py-2.5 bg-input-bg border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all";
   const labelClass = "block text-sm font-medium text-text-primary mb-1.5";
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-page-bg">

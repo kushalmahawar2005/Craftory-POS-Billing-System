@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingCart, Package, BarChart3, Users, Settings,
-  ChevronLeft, ChevronRight, Bell, Search, LogOut, Menu, X, Store, FileText
+  ChevronLeft, ChevronRight, Bell, Search, LogOut, Menu, X, Store, FileText, Truck, UserCog
 } from 'lucide-react';
 
 const navItems = [
@@ -16,20 +16,37 @@ const navItems = [
   { label: 'Products', icon: Store, href: '/app/products' },
   { label: 'Reports', icon: BarChart3, href: '/app/reports' },
   { label: 'Customers', icon: Users, href: '/app/customers' },
+  { label: 'Staff', icon: UserCog, href: '/app/staff' },
+  { label: 'Suppliers', icon: Truck, href: '/app/suppliers' },
   { label: 'Invoices', icon: FileText, href: '/app/invoices' },
   { label: 'Settings', icon: Settings, href: '/app/settings' },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '/login';
   };
+
+  if (!mounted) {
+    return (
+      <div className="flex h-screen bg-page-bg">
+        {/* Loading placeholder to avoid hydration mismatch while keeping shape roughly similar */}
+        <div className="w-[240px] hidden lg:block bg-sidebar-dark" />
+        <div className="flex-1" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-page-bg overflow-hidden">

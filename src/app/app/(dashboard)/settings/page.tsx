@@ -2,15 +2,15 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Store, FileText, Bell, Printer, Globe, Users, Shield, CreditCard, Save } from 'lucide-react';
+import { Store, FileText, Bell, Printer, Globe, Users, Shield, CreditCard, Save, Database, Download, CheckCircle2 } from 'lucide-react';
 
 const settingsSections = [
   { id: 'store', label: 'Store Profile', icon: Store },
   { id: 'tax', label: 'Tax & GST', icon: FileText },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'receipt', label: 'Receipt Template', icon: Printer },
-  { id: 'users', label: 'User Management', icon: Users },
   { id: 'security', label: 'Security', icon: Shield },
+  { id: 'backup', label: 'Database Backup', icon: Database },
 ];
 
 export default function SettingsPage() {
@@ -143,34 +143,42 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {activeSection === 'users' && (
+            {activeSection === 'backup' && (
               <div className="bg-white rounded-xl p-6 border border-border/50">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-bold text-text-primary">User Management</h2>
-                  <button className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-dark">+ Add User</button>
+                  <h2 className="text-lg font-bold text-text-primary">Database Backup & Sync</h2>
                 </div>
-                <div className="space-y-3">
-                  {[
-                    { name: 'Demo User', email: 'demo@craftorypos.com', role: 'Owner', status: 'Active' },
-                    { name: 'Cashier 1', email: 'cashier1@craftorypos.com', role: 'Cashier', status: 'Active' },
-                    { name: 'Manager', email: 'manager@craftorypos.com', role: 'Manager', status: 'Inactive' },
-                  ].map((user, i) => (
-                    <div key={i} className="flex items-center justify-between p-4 bg-page-bg rounded-lg border border-border/50">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center">
-                          <span className="text-xs font-bold text-primary">{user.name.split(' ').map(n => n[0]).join('')}</span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-text-primary">{user.name}</p>
-                          <p className="text-xs text-text-muted">{user.email}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="px-2 py-0.5 bg-primary-light text-primary rounded-full text-[10px] font-semibold">{user.role}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${user.status === 'Active' ? 'bg-green-50 text-secondary-green' : 'bg-gray-100 text-text-muted'}`}>{user.status}</span>
-                      </div>
+                
+                <div className="p-5 bg-secondary-green/5 border border-secondary-green/20 rounded-xl mb-6 flex items-start gap-4">
+                  <div className="w-10 h-10 bg-secondary-green/10 rounded-full flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-5 h-5 text-secondary-green" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-text-primary">Cloud Sync Active</h3>
+                    <p className="text-sm text-text-muted mt-1">Your data is automatically synced to the cloud every 5 minutes. Last successful sync: <strong>Just now</strong>.</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">Manual Backups</h3>
+                  <div className="flex items-center justify-between p-4 bg-page-bg rounded-lg border border-border/50">
+                    <div>
+                      <p className="text-sm font-semibold text-text-primary">Complete Local Backup</p>
+                      <p className="text-xs text-text-muted">Download a .bak file containing all your products, sales, and settings to your local machine.</p>
                     </div>
-                  ))}
+                    <button className="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-lg text-sm font-semibold text-text-primary hover:bg-gray-50 transition-all">
+                      <Download className="w-4 h-4" /> Download Backup
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-page-bg rounded-lg border border-border/50">
+                    <div>
+                      <p className="text-sm font-semibold text-text-primary">Product Database Export</p>
+                      <p className="text-xs text-text-muted">Download a CSV of your entire catalog for bulk editing.</p>
+                    </div>
+                    <button className="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-lg text-sm font-semibold text-text-primary hover:bg-gray-50 transition-all">
+                      <Download className="w-4 h-4" /> Export CSV
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
