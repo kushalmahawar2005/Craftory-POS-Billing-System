@@ -1,0 +1,350 @@
+
+> pos@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.216.222:3000
+- Environments: .env
+
+✓ Starting...
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+✓ Ready in 1553ms
+ POST /api/auth/forgot-password 200 in 695ms (compile: 461ms, render: 234ms)
+
+=============================================
+[EMAIL DISPATCH] Password Reset
+To: craftorystudio046@gmail.com
+Link: http://localhost:3000/reset-password?token=23f990d1cddb4b1d975bba5b750e73cc9a11f77e9d490e1cad5656645633bf9b&email=craftorystudio046%40gmail.com
+=============================================
+
+ POST /api/auth/forgot-password 200 in 8.7s (compile: 8ms, render: 8.7s)
+○ Compiling /login ...
+ GET /login 200 in 4.9s (compile: 3.8s, render: 1105ms)
+ GET /signup 200 in 1393ms (compile: 1276ms, render: 117ms)
+[SMS MOCK] Sending OTP 368031 to phone 6367828788
+ POST /api/auth/signup 200 in 938ms (compile: 557ms, render: 381ms)
+ GET /signup 200 in 779ms (compile: 534ms, render: 245ms)
+ GET /signup 200 in 676ms (compile: 12ms, render: 665ms)
+ GET /signup 200 in 593ms (compile: 526ms, render: 68ms)
+ GET /signup 404 in 1337ms (compile: 608ms, render: 729ms)
+ GET /signup 200 in 64ms (compile: 11ms, render: 52ms)
+ GET /signup 200 in 707ms (compile: 14ms, render: 694ms)
+ GET /signup 200 in 1033ms (compile: 283ms, render: 750ms)
+ GET /signup 404 in 471ms (compile: 252ms, render: 219ms)
+ GET /signup 200 in 114ms (compile: 12ms, render: 102ms)
+ GET /signup 200 in 1132ms (compile: 132ms, render: 1001ms)
+ GET /signup 200 in 290ms (compile: 15ms, render: 275ms)
+ GET /signup 200 in 829ms (compile: 10ms, render: 818ms)
+ GET /signup 200 in 741ms (compile: 11ms, render: 730ms)
+ GET /signup 200 in 173ms (compile: 9ms, render: 163ms)
+ GET /signup 200 in 1932ms (compile: 1144ms, render: 788ms)
+ GET /signup 200 in 631ms (compile: 11ms, render: 620ms)
+ GET /signup 200 in 411ms (compile: 17ms, render: 394ms)
+ GET /signup 200 in 257ms (compile: 41ms, render: 216ms)
+ GET /signup 200 in 648ms (compile: 151ms, render: 497ms)
+ GET /signup 200 in 464ms (compile: 14ms, render: 449ms)
+ GET /signup 200 in 393ms (compile: 11ms, render: 382ms)
+ GET /signup 200 in 247ms (compile: 31ms, render: 216ms)
+ GET /signup 200 in 124ms (compile: 18ms, render: 106ms)
+ GET /signup 200 in 398ms (compile: 102ms, render: 296ms)
+ GET /signup 200 in 308ms (compile: 9ms, render: 299ms)
+ GET /signup 200 in 278ms (compile: 9ms, render: 269ms)
+ GET /signup 200 in 213ms (compile: 17ms, render: 196ms)
+ GET /signup 200 in 155ms (compile: 7ms, render: 148ms)
+ GET /signup 200 in 584ms (compile: 180ms, render: 404ms)
+ GET /signup 200 in 280ms (compile: 7ms, render: 273ms)
+ GET /signup 200 in 246ms (compile: 8ms, render: 238ms)
+ GET /signup 200 in 180ms (compile: 8ms, render: 172ms)
+ GET /signup 200 in 121ms (compile: 11ms, render: 110ms)
+ GET /signup 200 in 478ms (compile: 104ms, render: 374ms)
+ GET /signup 200 in 373ms (compile: 8ms, render: 365ms)
+ GET /signup 200 in 311ms (compile: 15ms, render: 296ms)
+ GET /signup 200 in 261ms (compile: 12ms, render: 248ms)
+ GET /signup 200 in 176ms (compile: 17ms, render: 160ms)
+ GET /signup 200 in 401ms (compile: 244ms, render: 157ms)
+ GET /signup 200 in 504ms (compile: 36ms, render: 468ms)
+ GET /signup 200 in 306ms (compile: 18ms, render: 288ms)
+ GET /signup 200 in 234ms (compile: 8ms, render: 227ms)
+ GET /signup 200 in 381ms (compile: 13ms, render: 368ms)
+ GET /signup 200 in 314ms (compile: 91ms, render: 222ms)
+ GET /signup 200 in 146ms (compile: 38ms, render: 108ms)
+ GET /signup 200 in 591ms (compile: 115ms, render: 476ms)
+ GET /signup 200 in 486ms (compile: 8ms, render: 478ms)
+ GET /signup 200 in 472ms (compile: 9ms, render: 464ms)
+ GET /signup 200 in 491ms (compile: 63ms, render: 428ms)
+ GET /signup 200 in 328ms (compile: 17ms, render: 311ms)
+ GET /signup 200 in 216ms (compile: 9ms, render: 207ms)
+ GET /signup 200 in 397ms (compile: 135ms, render: 262ms)
+ GET /signup 200 in 266ms (compile: 7ms, render: 259ms)
+ GET /signup 200 in 217ms (compile: 7ms, render: 210ms)
+ GET /signup 200 in 152ms (compile: 7ms, render: 145ms)
+ GET /signup 200 in 91ms (compile: 14ms, render: 77ms)
+ GET /signup 200 in 484ms (compile: 52ms, render: 432ms)
+ GET /signup 200 in 502ms (compile: 6ms, render: 497ms)
+ GET /signup 200 in 618ms (compile: 22ms, render: 595ms)
+ GET /signup 200 in 592ms (compile: 18ms, render: 574ms)
+ GET /signup 200 in 673ms (compile: 14ms, render: 659ms)
+ GET /signup 200 in 659ms (compile: 26ms, render: 633ms)
+ GET /signup 200 in 730ms (compile: 45ms, render: 685ms)
+ GET /signup 200 in 557ms (compile: 10ms, render: 547ms)
+ GET /signup 200 in 440ms (compile: 17ms, render: 423ms)
+ GET /signup 200 in 394ms (compile: 17ms, render: 377ms)
+ GET /signup 200 in 789ms (compile: 309ms, render: 480ms)
+ GET /signup 200 in 331ms (compile: 10ms, render: 322ms)
+ GET /signup 200 in 173ms (compile: 11ms, render: 162ms)
+ GET /signup 200 in 97ms (compile: 8ms, render: 88ms)
+ GET /signup 200 in 522ms (compile: 81ms, render: 441ms)
+ GET /signup 200 in 409ms (compile: 5ms, render: 404ms)
+ GET /signup 200 in 355ms (compile: 11ms, render: 344ms)
+ GET /signup 200 in 280ms (compile: 24ms, render: 256ms)
+ GET /signup 200 in 171ms (compile: 8ms, render: 163ms)
+ GET /signup 200 in 187ms (compile: 104ms, render: 82ms)
+  Reload env: .env
+ GET /signup 200 in 160ms (compile: 90ms, render: 70ms)
+✓ Compiled in 373ms
+  Reload env: .env
+ GET /signup 200 in 260ms (compile: 167ms, render: 93ms)
+  Reload env: .env
+ GET /signup 200 in 535ms (compile: 313ms, render: 222ms)
+ POST /api/auth/signup 409 in 9.9s (compile: 9.8s, render: 101ms)
+ POST /api/auth/signup 409 in 54ms (compile: 8ms, render: 46ms)
+ POST /api/auth/signup 409 in 126ms (compile: 15ms, render: 111ms)
+ POST /api/auth/signup 400 in 15ms (compile: 5ms, render: 11ms)
+prisma:error 
+Invalid `tx.user.create()` invocation in
+/home/kushal-mahawar/Data/Craftory- POS/Craftory-POS-Billing-System/.next/dev/server/chunks/[root-of-the-server]__c7832456._.js:410:27
+
+  407         shopId: shop.id
+  408     }
+  409 });
+→ 410 await tx.user.create({
+        data: {
+          name: "Kushal Mahawar",
+          email: "kushalmahawar114@gmail.com",
+          passwordHash: "$2b$12$OASGfufeZlzQC9vJBHKHxevFa/gIMNwh2EENrGZnI4Rw2RYqY9oo6",
+          role: "ADMIN",
+          isVerified: false,
+          ~~~~~~~~~~
+          shopId: "cmmqs6ibd0005yqg3ykzr2h7g",
+          storeId: "cmmqs6ibg0006yqg38d3jao0x",
+      ?   id?: String,
+      ?   createdAt?: DateTime,
+      ?   managedStores?: StoreUncheckedCreateNestedManyWithoutManagerInput,
+      ?   sales?: SaleUncheckedCreateNestedManyWithoutStaffInput,
+      ?   performance?: StaffPerformanceUncheckedCreateNestedManyWithoutStaffInput
+        }
+      })
+
+Unknown argument `isVerified`. Available options are marked with ?.
+Signup Error: Error [PrismaClientValidationError]: 
+Invalid `tx.user.create()` invocation in
+/home/kushal-mahawar/Data/Craftory- POS/Craftory-POS-Billing-System/.next/dev/server/chunks/[root-of-the-server]__c7832456._.js:410:27
+
+  407         shopId: shop.id
+  408     }
+  409 });
+→ 410 await tx.user.create({
+        data: {
+          name: "Kushal Mahawar",
+          email: "kushalmahawar114@gmail.com",
+          passwordHash: "$2b$12$OASGfufeZlzQC9vJBHKHxevFa/gIMNwh2EENrGZnI4Rw2RYqY9oo6",
+          role: "ADMIN",
+          isVerified: false,
+          ~~~~~~~~~~
+          shopId: "cmmqs6ibd0005yqg3ykzr2h7g",
+          storeId: "cmmqs6ibg0006yqg38d3jao0x",
+      ?   id?: String,
+      ?   createdAt?: DateTime,
+      ?   managedStores?: StoreUncheckedCreateNestedManyWithoutManagerInput,
+      ?   sales?: SaleUncheckedCreateNestedManyWithoutStaffInput,
+      ?   performance?: StaffPerformanceUncheckedCreateNestedManyWithoutStaffInput
+        }
+      })
+
+Unknown argument `isVerified`. Available options are marked with ?.
+    at <unknown> (src/app/api/auth/signup/route.ts:59:21)
+    at async (src/app/api/auth/signup/route.ts:59:7)
+    at async POST (src/app/api/auth/signup/route.ts:41:5)
+  57 |       });
+  58 |
+> 59 |       await tx.user.create({
+     |                     ^
+  60 |         data: {
+  61 |           name,
+  62 |           email, {
+  clientVersion: '7.5.0'
+}
+ POST /api/auth/signup 500 in 2.1s (compile: 4ms, render: 2.1s)
+prisma:error 
+Invalid `tx.user.create()` invocation in
+/home/kushal-mahawar/Data/Craftory- POS/Craftory-POS-Billing-System/.next/dev/server/chunks/[root-of-the-server]__c7832456._.js:410:27
+
+  407         shopId: shop.id
+  408     }
+  409 });
+→ 410 await tx.user.create({
+        data: {
+          name: "Kushal Mahawar",
+          email: "kushalmahawar114@gmail.com",
+          passwordHash: "$2b$12$e3VBSaLkNhwmAH4Yw3t.S.gYD7ykVu0X5709fDNePMRwp1S0LBKXe",
+          role: "ADMIN",
+          isVerified: false,
+          ~~~~~~~~~~
+          shopId: "cmmqs7vd60007yqg3zd9z2mjt",
+          storeId: "cmmqs7vdb0008yqg3nkjgu4sx",
+      ?   id?: String,
+      ?   createdAt?: DateTime,
+      ?   managedStores?: StoreUncheckedCreateNestedManyWithoutManagerInput,
+      ?   sales?: SaleUncheckedCreateNestedManyWithoutStaffInput,
+      ?   performance?: StaffPerformanceUncheckedCreateNestedManyWithoutStaffInput
+        }
+      })
+
+Unknown argument `isVerified`. Available options are marked with ?.
+Signup Error: Error [PrismaClientValidationError]: 
+Invalid `tx.user.create()` invocation in
+/home/kushal-mahawar/Data/Craftory- POS/Craftory-POS-Billing-System/.next/dev/server/chunks/[root-of-the-server]__c7832456._.js:410:27
+
+  407         shopId: shop.id
+  408     }
+  409 });
+→ 410 await tx.user.create({
+        data: {
+          name: "Kushal Mahawar",
+          email: "kushalmahawar114@gmail.com",
+          passwordHash: "$2b$12$e3VBSaLkNhwmAH4Yw3t.S.gYD7ykVu0X5709fDNePMRwp1S0LBKXe",
+          role: "ADMIN",
+          isVerified: false,
+          ~~~~~~~~~~
+          shopId: "cmmqs7vd60007yqg3zd9z2mjt",
+          storeId: "cmmqs7vdb0008yqg3nkjgu4sx",
+      ?   id?: String,
+      ?   createdAt?: DateTime,
+      ?   managedStores?: StoreUncheckedCreateNestedManyWithoutManagerInput,
+      ?   sales?: SaleUncheckedCreateNestedManyWithoutStaffInput,
+      ?   performance?: StaffPerformanceUncheckedCreateNestedManyWithoutStaffInput
+        }
+      })
+
+Unknown argument `isVerified`. Available options are marked with ?.
+    at <unknown> (src/app/api/auth/signup/route.ts:59:21)
+    at async (src/app/api/auth/signup/route.ts:59:7)
+    at async POST (src/app/api/auth/signup/route.ts:41:5)
+  57 |       });
+  58 |
+> 59 |       await tx.user.create({
+     |                     ^
+  60 |         data: {
+  61 |           name,
+  62 |           email, {
+  clientVersion: '7.5.0'
+}
+ POST /api/auth/signup 500 in 1317ms (compile: 8ms, render: 1309ms)
+Persisting failed: Unable to write SST file 00000755.sst
+
+Caused by:
+    No such file or directory (os error 2)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)

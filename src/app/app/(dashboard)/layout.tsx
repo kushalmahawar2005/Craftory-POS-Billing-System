@@ -26,16 +26,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const pathname = usePathname();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useState(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated) {
+          setUser(data.user);
+        } else {
+          window.location.href = '/login';
+        }
+      })
+      .catch(() => {
+        window.location.href = '/login';
+      });
+  });
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login';
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    } catch (e) {
+      window.location.href = '/login';
+    }
   };
 
   if (!mounted) {
@@ -77,11 +94,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group relative ${
-                  isActive
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group relative ${isActive
                     ? 'bg-primary/15 text-white'
                     : 'text-sidebar-text hover:text-white hover:bg-sidebar-hover'
-                }`}
+                  }`}
               >
                 {isActive && (
                   <motion.div layoutId="activeNav" className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full" />
@@ -136,11 +152,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
             <div className="flex items-center gap-2 pl-3 border-l border-border">
               <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                <span className="text-xs font-bold text-primary">DU</span>
+                <span className="text-xs font-bold text-primary">{user?.name?.charAt(0) || 'U'}</span>
               </div>
               <div className="hidden sm:block">
-                <p className="text-sm font-medium text-text-primary leading-none">Demo User</p>
-                <p className="text-[11px] text-text-muted">demo@craftorypos.com</p>
+                <p className="text-sm font-medium text-text-primary leading-none">{user?.name || 'Loading...'}</p>
+                <p className="text-[11px] text-text-muted">{user?.email || 'Please wait...'}</p>
               </div>
             </div>
           </div>
