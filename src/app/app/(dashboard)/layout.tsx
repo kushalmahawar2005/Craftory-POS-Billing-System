@@ -24,7 +24,7 @@ const navItems: NavItem[] = [
     label: 'Inventory',
     icon: Package,
     subItems: [
-      { label: 'Items', href: '/app/products' },
+      { label: 'Products', href: '/app/products' },
       { label: 'Categories', href: '/app/categories' },
       { label: 'Adjustments', href: '/app/adjustments' },
     ],
@@ -189,12 +189,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       {item.subItems!.map(sub => {
                         const subActive = pathname === sub.href;
                         return (
-                          <Link key={sub.href} href={sub.href} onClick={() => setMobileOpen(false)} className={`pl-11 pr-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between ${
-                            subActive ? 'bg-sidebar-hover/60 text-white' : 'text-sidebar-text hover:text-white hover:bg-sidebar-hover'
-                          }`}>
-                            <span>{sub.label}</span>
-                            {sub.label === 'Items' && <Plus className="w-3.5 h-3.5 opacity-50 hover:opacity-100" />}
-                          </Link>
+                          <div className="flex items-center justify-between w-full group/sub">
+                            <Link
+                              key={sub.href}
+                              href={sub.href}
+                              onClick={() => setMobileOpen(false)}
+                              className={`flex-1 pl-11 pr-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between ${
+                                pathname === sub.href
+                                  ? 'bg-primary text-white'
+                                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                              }`}
+                            >
+                              <span>{sub.label}</span>
+                            </Link>
+                            {sub.label === 'Products' && (
+                              <Link
+                                href="/app/products/new"
+                                className="mr-3 p-1 hover:bg-white/10 rounded transition-colors"
+                              >
+                                <Plus className="w-3.5 h-3.5 opacity-50 hover:opacity-100" />
+                              </Link>
+                            )}
+                          </div>
                         );
                       })}
                     </motion.div>
@@ -231,35 +247,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content */}
       <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${collapsed ? 'lg:ml-[68px]' : 'lg:ml-[240px]'}`}>
         {/* Topbar */}
-        <header className="h-16 bg-white border-b border-border flex items-center justify-between px-4 lg:px-6 sticky top-0 z-20">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100">
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-            <div className="hidden sm:flex items-center gap-2 bg-page-bg rounded-lg px-3 py-2 w-72">
-              <Search className="w-4 h-4 text-text-muted" />
-              <input type="text" placeholder="Search products, invoices..." className="bg-transparent text-sm outline-none w-full placeholder:text-text-muted" />
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
-              <Bell className="w-5 h-5 text-text-muted" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full" />
-            </button>
-            <div className="flex items-center gap-2 pl-3 border-l border-border">
-              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                <span className="text-xs font-bold text-primary">{user?.name?.charAt(0) || 'U'}</span>
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-sm font-medium text-text-primary leading-none">{user?.name || 'Loading...'}</p>
-                <p className="text-[11px] text-text-muted">{user?.role || '...'}</p>
+        {!pathname.includes('/products/new') && (
+          <header className="h-16 bg-white border-b border-border flex items-center justify-between px-4 lg:px-6 sticky top-0 z-20">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100">
+                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+              <div className="hidden sm:flex items-center gap-2 bg-page-bg rounded-lg px-3 py-2 w-72">
+                <Search className="w-4 h-4 text-text-muted" />
+                <input type="text" placeholder="Search products, invoices..." className="bg-transparent text-sm outline-none w-full placeholder:text-text-muted" />
               </div>
             </div>
-          </div>
-        </header>
+            <div className="flex items-center gap-3">
+              <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <Bell className="w-5 h-5 text-text-muted" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full" />
+              </button>
+              <div className="flex items-center gap-2 pl-3 border-l border-border">
+                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                  <span className="text-xs font-bold text-primary">{user?.name?.charAt(0) || 'U'}</span>
+                </div>
+                <div className="hidden sm:block">
+                  <p className="text-sm font-medium text-text-primary leading-none">{user?.name || 'Loading...'}</p>
+                  <p className="text-[11px] text-text-muted">{user?.role || '...'}</p>
+                </div>
+              </div>
+            </div>
+          </header>
+        )}
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+        <main className={`flex-1 overflow-y-auto ${pathname.includes('/products/new') ? '' : 'p-4 lg:p-6'}`}>
           {children}
         </main>
       </div>
