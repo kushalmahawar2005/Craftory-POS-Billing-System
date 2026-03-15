@@ -3,32 +3,38 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingCart, Package, BarChart3, Users, Settings,
-  ChevronLeft, ChevronRight, Bell, Search, LogOut, Menu, X, Store,
-  FileText, Truck, ClipboardList, Shield, UserCog
-
+  ChevronLeft, ChevronRight, Bell, Search, LogOut, Menu, X, Store, FileText, Truck, UserCog, ChevronDown, Plus, Shield, ClipboardList
 } from 'lucide-react';
 
-interface NavItem {
+type NavItem = {
   label: string;
   icon: any;
-  href: string;
-  roles?: string[]; // if undefined = all roles
-}
+  href?: string;
+  subItems?: { label: string; href: string }[];
+  roles?: string[];
+};
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/app/dashboard' },
   { label: 'POS Billing', icon: ShoppingCart, href: '/app/pos' },
-  { label: 'Inventory', icon: Package, href: '/app/inventory' },
-  { label: 'Products', icon: Store, href: '/app/products', roles: ['ADMIN', 'MANAGER'] },
-  { label: 'Suppliers', icon: Truck, href: '/app/suppliers', roles: ['ADMIN', 'MANAGER'] },
-  { label: 'Staff', icon: UserCog, href: '/app/staff', roles: ['ADMIN'] },
-  { label: 'Purchase Orders', icon: ClipboardList, href: '/app/purchase-orders', roles: ['ADMIN', 'MANAGER'] },
+  {
+    label: 'Inventory',
+    icon: Package,
+    subItems: [
+      { label: 'Items', href: '/app/products' },
+      { label: 'Categories', href: '/app/categories' },
+      { label: 'Adjustments', href: '/app/adjustments' },
+    ],
+    roles: ['ADMIN', 'MANAGER']
+  },
   { label: 'Reports', icon: BarChart3, href: '/app/reports', roles: ['ADMIN', 'MANAGER'] },
   { label: 'Customers', icon: Users, href: '/app/customers', roles: ['ADMIN', 'MANAGER'] },
-
+  { label: 'Staff', icon: UserCog, href: '/app/staff', roles: ['ADMIN'] },
+  { label: 'Suppliers', icon: Truck, href: '/app/suppliers', roles: ['ADMIN', 'MANAGER'] },
+  { label: 'Purchase Orders', icon: ClipboardList, href: '/app/purchase-orders', roles: ['ADMIN', 'MANAGER'] },
   { label: 'Invoices', icon: FileText, href: '/app/invoices' },
   { label: 'Settings', icon: Settings, href: '/app/settings', roles: ['ADMIN'] },
 ];
@@ -37,31 +43,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [expandedNav, setExpandedNav] = useState<string>('Inventory');
   const [user, setUser] = useState<any>(null);
   const pathname = usePathname();
 
   useEffect(() => {
+    setMounted(true);
+    // Fetch user session
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => {
-        if (data.authenticated) setUser(data.user);
-        else window.location.href = '/login';
+        if (data.authenticated) {
+          setUser(data.user);
+        } else {
+          window.location.href = '/login';
+        }
       })
-      .catch(() => { window.location.href = '/login'; });
+      .catch(() => {
+        window.location.href = '/login';
+      });
   }, []);
 
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
-      window.location.href = '/login';
-    } catch {
+    } catch (e) {
+      console.error('Logout failed', e);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       window.location.href = '/login';
     }
   };
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Filter nav items based on user role
   const visibleNavItems = navItems.filter(item => {
@@ -119,29 +132,80 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Nav Items */}
         <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
           {visibleNavItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+            const hasSubItems = item.subItems && item.subItems.length > 0;
+            const isSubItemActive = hasSubItems && item.subItems!.some(sub => pathname === sub.href || pathname.startsWith(sub.href + '/'));
+            const isActive = item.href ? (pathname === item.href || pathname.startsWith(item.href + '/')) : isSubItemActive;
             const Icon = item.icon;
+
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group relative ${isActive
-                  ? 'bg-primary/15 text-white'
-                  : 'text-sidebar-text hover:text-white hover:bg-sidebar-hover'
-                  }`}
-              >
-                {isActive && (
-                  <motion.div layoutId="activeNav" className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full" />
+              <div key={item.label} className="mb-1">
+                {item.href ? (
+                  <Link
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group relative ${
+                      isActive
+                        ? 'bg-primary/15 text-white'
+                        : 'text-sidebar-text hover:text-white hover:bg-sidebar-hover'
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.div layoutId="activeNav" className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full" />
+                    )}
+                    <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-primary' : ''}`} />
+                    {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => setExpandedNav(expandedNav === item.label ? '' : item.label)}
+                    className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all group relative ${
+                      isActive || expandedNav === item.label
+                        ? 'text-white'
+                        : 'text-sidebar-text hover:text-white hover:bg-sidebar-hover'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                       {isActive && expandedNav !== item.label && (
+                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full" />
+                       )}
+                       <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-primary' : ''}`} />
+                       {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
+                    </div>
+                    {!collapsed && (
+                      <ChevronDown className={`w-4 h-4 text-sidebar-text transition-transform ${expandedNav === item.label ? 'rotate-180' : ''}`} />
+                    )}
+                  </button>
                 )}
-                <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-primary' : ''}`} />
-                {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
-              </Link>
+
+                {/* Sub Menu */}
+                <AnimatePresence>
+                  {hasSubItems && !collapsed && expandedNav === item.label && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="mt-1 flex flex-col space-y-1 overflow-hidden"
+                    >
+                      {item.subItems!.map(sub => {
+                        const subActive = pathname === sub.href;
+                        return (
+                          <Link key={sub.href} href={sub.href} onClick={() => setMobileOpen(false)} className={`pl-11 pr-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between ${
+                            subActive ? 'bg-sidebar-hover/60 text-white' : 'text-sidebar-text hover:text-white hover:bg-sidebar-hover'
+                          }`}>
+                            <span>{sub.label}</span>
+                            {sub.label === 'Items' && <Plus className="w-3.5 h-3.5 opacity-50 hover:opacity-100" />}
+                          </Link>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             );
           })}
         </nav>
 
-        {/* Bottom Actions */}
+        {/* Collapse Toggle */}
         <div className="px-2 py-3 border-t border-white/8">
           <button
             onClick={handleLogout}

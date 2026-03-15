@@ -3,6 +3,9 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import FloatingPOSVisual from '@/components/marketing/FloatingPOSVisual';
+import StickyScrollFeatures from '@/components/marketing/StickyScrollFeatures';
+import FeatureLaptopSlider from '@/components/marketing/FeatureLaptopSlider';
 import {
   ShoppingCart, BarChart3, Package, Users, Store, Receipt, MessageSquare,
   FileText, ArrowRight, Check, Star, Zap, Shield, Globe, TrendingUp,
@@ -214,6 +217,12 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Zoho Inspired Floating POS Visual */}
+      <FloatingPOSVisual />
+      
+      {/* Sticky Scrolling Features */}
+      <StickyScrollFeatures />
+
       {/* Stats */}
       <section className="py-16 bg-white border-y border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -236,7 +245,7 @@ export default function HomePage() {
       {/* Features Showcase */}
       <section className="py-24 bg-page-bg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div {...fadeInUp} className="text-center mb-16">
+          <motion.div {...fadeInUp} className="text-center mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full mb-4">
               <Zap className="w-3.5 h-3.5" /> Powerful Features
             </div>
@@ -248,30 +257,11 @@ export default function HomePage() {
             </p>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {features.map((feature, i) => {
-              const Icon = feature.icon;
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.08 }}
-                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                  className="bg-white rounded-xl p-6 border border-border/50 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 transition-all cursor-pointer group"
-                >
-                  <div className="w-11 h-11 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary/15 transition-colors">
-                    <Icon className="w-5 h-5 text-primary" />
-                  </div>
-                  <h3 className="text-base font-bold text-text-primary mb-2">{feature.title}</h3>
-                  <p className="text-sm text-text-muted leading-relaxed">{feature.desc}</p>
-                </motion.div>
-              );
-            })}
+          <div className="-mx-4 sm:-mx-6 lg:-mx-8">
+            <FeatureLaptopSlider />
           </div>
 
-          <motion.div {...fadeInUp} className="text-center mt-10">
+          <motion.div {...fadeInUp} className="text-center mt-6">
             <Link
               href="/features"
               className="inline-flex items-center gap-2 text-primary font-semibold text-sm hover:gap-3 transition-all"
