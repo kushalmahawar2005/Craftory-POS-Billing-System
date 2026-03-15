@@ -18,8 +18,16 @@ export async function GET(req: Request) {
                     { phone: { contains: search, mode: 'insensitive' } },
                 ],
             },
+            include: {
+                _count: { select: { sales: true } },
+                sales: {
+                    orderBy: { createdAt: 'desc' },
+                    take: 1,
+                    select: { createdAt: true }
+                }
+            },
             orderBy: { createdAt: 'desc' },
-            take: 20
+            take: 50
         });
         return NextResponse.json(customers);
     } catch (error) {

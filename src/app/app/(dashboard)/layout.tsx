@@ -1,23 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingCart, Package, BarChart3, Users, Settings,
-  ChevronLeft, ChevronRight, Bell, Search, LogOut, Menu, X, Store, FileText
+  ChevronLeft, ChevronRight, Bell, Search, LogOut, Menu, X, Store,
+  FileText, Truck, ClipboardList, Shield
 } from 'lucide-react';
 
-const navItems = [
+interface NavItem {
+  label: string;
+  icon: any;
+  href: string;
+  roles?: string[]; // if undefined = all roles
+}
+
+const navItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/app/dashboard' },
   { label: 'POS Billing', icon: ShoppingCart, href: '/app/pos' },
   { label: 'Inventory', icon: Package, href: '/app/inventory' },
-  { label: 'Products', icon: Store, href: '/app/products' },
-  { label: 'Reports', icon: BarChart3, href: '/app/reports' },
-  { label: 'Customers', icon: Users, href: '/app/customers' },
+  { label: 'Products', icon: Store, href: '/app/products', roles: ['ADMIN', 'MANAGER'] },
+  { label: 'Suppliers', icon: Truck, href: '/app/suppliers', roles: ['ADMIN', 'MANAGER'] },
+  { label: 'Purchase Orders', icon: ClipboardList, href: '/app/purchase-orders', roles: ['ADMIN', 'MANAGER'] },
+  { label: 'Reports', icon: BarChart3, href: '/app/reports', roles: ['ADMIN', 'MANAGER'] },
+  { label: 'Customers', icon: Users, href: '/app/customers', roles: ['ADMIN', 'MANAGER'] },
   { label: 'Invoices', icon: FileText, href: '/app/invoices' },
-  { label: 'Settings', icon: Settings, href: '/app/settings' },
+  { label: 'Settings', icon: Settings, href: '/app/settings', roles: ['ADMIN'] },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -26,30 +36,36 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [user, setUser] = useState<any>(null);
   const pathname = usePathname();
 
-  useState(() => {
+  useEffect(() => {
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => {
-        if (data.authenticated) {
-          setUser(data.user);
-        } else {
-          window.location.href = '/login';
-        }
+        if (data.authenticated) setUser(data.user);
+        else window.location.href = '/login';
       })
-      .catch(() => {
-        window.location.href = '/login';
-      });
-  });
+      .catch(() => { window.location.href = '/login'; });
+  }, []);
 
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
       window.location.href = '/login';
-    } catch (e) {
+    } catch {
       window.location.href = '/login';
     }
+  };
+
+  // Filter nav items based on user role
+  const visibleNavItems = navItems.filter(item => {
+    if (!item.roles) return true; // visible to all
+    if (!user?.role) return false; // hide until role loaded
+    return item.roles.includes(user.role);
+  });
+
+  const roleColors: Record<string, string> = {
+    ADMIN: 'bg-primary/20 text-primary',
+    MANAGER: 'bg-blue-500/20 text-blue-400',
+    CASHIER: 'bg-green-500/20 text-green-400',
   };
 
   return (
@@ -65,15 +81,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <ShoppingCart className="w-4 h-4 text-white" />
           </div>
           {!collapsed && (
-            <motion.span initial={false} animate={{ opacity: collapsed ? 0 : 1 }} className="text-base font-bold text-white whitespace-nowrap">
+            <motion.span initial={false} animate={{ opacity: collapsed ? 0 : 1 }}
+              className="text-base font-bold text-white whitespace-nowrap">
               Craftory<span className="text-blue-400">POS</span>
             </motion.span>
           )}
         </div>
 
+        {/* Role Badge */}
+        {!collapsed && user?.role && (
+          <div className="mx-3 mt-3 mb-1">
+            <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ${roleColors[user.role] || 'bg-white/10 text-white'}`}>
+              <Shield className="w-3 h-3" />
+              <span className="text-[10px] font-black uppercase tracking-widest">{user.role}</span>
+            </div>
+          </div>
+        )}
+
         {/* Nav Items */}
         <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
             const Icon = item.icon;
             return (
@@ -82,8 +109,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group relative ${isActive
-                    ? 'bg-primary/15 text-white'
-                    : 'text-sidebar-text hover:text-white hover:bg-sidebar-hover'
+                  ? 'bg-primary/15 text-white'
+                  : 'text-sidebar-text hover:text-white hover:bg-sidebar-hover'
                   }`}
               >
                 {isActive && (
@@ -96,7 +123,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
 
-        {/* Collapse Toggle */}
+        {/* Bottom Actions */}
         <div className="px-2 py-3 border-t border-white/8">
           <button
             onClick={handleLogout}
@@ -143,7 +170,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
               <div className="hidden sm:block">
                 <p className="text-sm font-medium text-text-primary leading-none">{user?.name || 'Loading...'}</p>
-                <p className="text-[11px] text-text-muted">{user?.email || 'Please wait...'}</p>
+                <p className="text-[11px] text-text-muted">{user?.role || '...'}</p>
               </div>
             </div>
           </div>

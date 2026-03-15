@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Download, Eye, Printer, FileText, Filter, Loader2, IndianRupee, Calendar, User } from 'lucide-react';
+import { Search, Download, Eye, Printer, FileText, Loader2, IndianRupee, Calendar, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function InvoicesPage() {
@@ -9,6 +9,87 @@ export default function InvoicesPage() {
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSale, setSelectedSale] = useState<any>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const downloadPdf = async (saleId: string, invoiceNumber: string) => {
+    setDownloadingId(saleId);
+    try {
+      const res = await fetch(`/api/invoices/${saleId}/pdf`);
+      if (!res.ok) throw new Error('Failed to generate PDF');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${invoiceNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('PDF download error:', e);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const shareWhatsApp = (sale: any) => {
+    const items = sale.items?.map((i: any) => `• ${i.product?.name || 'Item'} x${i.quantity} = ₹${i.total?.toFixed(2)}`).join('%0A') || '';
+    const msg = [
+      `*Invoice: ${sale.invoiceNumber}*`,
+      `Customer: ${sale.customer?.name || 'Walk-in Customer'}`,
+      `Date: ${new Date(sale.createdAt).toLocaleDateString('en-IN')}`,
+      ``,
+      `*Items:*`,
+      items,
+      ``,
+      `*Total: ₹${sale.total?.toFixed(2)}*`,
+      `Payment: ${sale.paymentMethod}`,
+      ``,
+      `Thank you for shopping with us! 🛍️`,
+    ].join('%0A');
+    const phone = sale.customer?.phone ? sale.customer.phone.replace(/[^0-9]/g, '') : '';
+    const url = phone ? `https://wa.me/91${phone}?text=${msg}` : `https://wa.me/?text=${msg}`;
+    window.open(url, '_blank');
+  };
+
+  const printThermal = (sale: any) => {
+    const items = sale.items?.map((i: any) =>
+      `<tr><td>${i.product?.name || 'Item'}</td><td style="text-align:center">${i.quantity}</td><td style="text-align:right">₹${i.total?.toFixed(2)}</td></tr>`
+    ).join('') || '';
+    const html = `
+      <!DOCTYPE html><html><head><title>${sale.invoiceNumber}</title>
+      <style>
+        @media print { @page { size: 80mm auto; margin: 4mm; } }
+        body { font-family: monospace; font-size: 12px; width: 72mm; margin: auto; }
+        h1 { font-size: 16px; text-align: center; margin: 0; }
+        .center { text-align: center; }
+        .divider { border-top: 1px dashed #000; margin: 6px 0; }
+        table { width: 100%; border-collapse: collapse; }
+        th { font-size: 10px; text-align: left; border-bottom: 1px solid #000; padding-bottom: 3px; }
+        td { padding: 2px 0; font-size: 11px; }
+        .total { font-size: 14px; font-weight: bold; text-align: right; margin-top: 6px; }
+        .footer { text-align: center; font-size: 10px; margin-top: 10px; }
+      </style></head><body>
+      <h1>RECEIPT</h1>
+      <div class="center" style="font-size:11px">Invoice: <b>${sale.invoiceNumber}</b></div>
+      <div class="center" style="font-size:10px">${new Date(sale.createdAt).toLocaleString('en-IN')}</div>
+      <div class="divider"></div>
+      <div style="font-size:11px">Customer: <b>${sale.customer?.name || 'Walk-in'}</b></div>
+      <div class="divider"></div>
+      <table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Amt</th></tr></thead>
+      <tbody>${items}</tbody></table>
+      <div class="divider"></div>
+      <div style="text-align:right;font-size:11px">Subtotal: ₹${sale.subtotal?.toFixed(2)}</div>
+      ${sale.discount > 0 ? `<div style="text-align:right;font-size:11px;color:#16a34a">Discount: -₹${sale.discount?.toFixed(2)}</div>` : ''}
+      <div class="total">TOTAL: ₹${sale.total?.toFixed(2)}</div>
+      <div style="text-align:right;font-size:10px">Payment: ${sale.paymentMethod}</div>
+      <div class="divider"></div>
+      <div class="footer">Thank you for shopping!<br/>Powered by CraftoryPOS</div>
+      </body></html>`;
+    const win = window.open('', '_blank', 'width=300,height=500');
+    if (win) { win.document.write(html); win.document.close(); win.focus(); win.print(); win.close(); }
+  };
 
   const fetchSales = async () => {
     setIsLoading(true);
@@ -116,8 +197,23 @@ export default function InvoicesPage() {
                   </td>
                   <td className="py-4 px-6">
                     <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => setSelectedSale(inv)} className="p-2 rounded-lg hover:bg-primary/10 text-primary transition-all"><Eye className="w-4 h-4" /></button>
-                      <button className="p-2 rounded-lg hover:bg-primary/10 text-primary transition-all"><Printer className="w-4 h-4" /></button>
+                      <button onClick={() => setSelectedSale(inv)} className="p-2 rounded-lg hover:bg-primary/10 text-primary transition-all" title="View Invoice">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => downloadPdf(inv.id, inv.invoiceNumber)}
+                        disabled={downloadingId === inv.id}
+                        className="p-2 rounded-lg hover:bg-secondary-green/10 text-secondary-green transition-all disabled:opacity-50"
+                        title="Download PDF"
+                      >
+                        {downloadingId === inv.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                      </button>
+                      <button onClick={() => shareWhatsApp(inv)} className="p-2 rounded-lg hover:bg-green-100 text-green-600 transition-all" title="Share on WhatsApp">
+                        <MessageCircle className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => printThermal(inv)} className="p-2 rounded-lg hover:bg-primary/10 text-primary transition-all" title="Thermal Print">
+                        <Printer className="w-4 h-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -194,13 +290,30 @@ export default function InvoicesPage() {
                   </div>
                 </div>
 
-                <div className="pt-4 flex gap-3">
-                  <button className="flex-1 py-4 bg-primary text-white font-black rounded-2xl hover:bg-primary-dark shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2">
-                    <Printer className="w-4 h-4" /> Print Receipt
-                  </button>
-                  <button onClick={() => setSelectedSale(null)} className="flex-1 py-4 bg-page-bg text-text-primary font-bold rounded-2xl border border-border transition-all">
-                    Close
-                  </button>
+                <div className="pt-4 flex flex-col gap-2">
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => downloadPdf(selectedSale.id, selectedSale.invoiceNumber)}
+                      disabled={downloadingId === selectedSale.id}
+                      className="flex-1 py-3 bg-primary text-white font-black rounded-2xl hover:bg-primary-dark shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                    >
+                      {downloadingId === selectedSale.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                      {downloadingId === selectedSale.id ? 'Generating...' : 'Download PDF'}
+                    </button>
+                    <button onClick={() => setSelectedSale(null)} className="flex-1 py-3 bg-page-bg text-text-primary font-bold rounded-2xl border border-border transition-all">
+                      Close
+                    </button>
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => shareWhatsApp(selectedSale)}
+                      className="flex-1 py-3 bg-green-500 text-white font-bold rounded-2xl hover:bg-green-600 transition-all flex items-center justify-center gap-2">
+                      <MessageCircle className="w-4 h-4" /> WhatsApp Share
+                    </button>
+                    <button onClick={() => printThermal(selectedSale)}
+                      className="flex-1 py-3 bg-page-bg text-text-primary font-bold rounded-2xl border border-border hover:bg-border/50 transition-all flex items-center justify-center gap-2">
+                      <Printer className="w-4 h-4" /> Thermal Print
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>

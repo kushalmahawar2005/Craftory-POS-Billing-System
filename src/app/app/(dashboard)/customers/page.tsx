@@ -1,49 +1,172 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, Plus, Phone, Mail, IndianRupee, MoreHorizontal, Users } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { Search, Plus, Phone, Mail, IndianRupee, Users, Loader2, X, Edit2, Trash2, ShoppingCart, Calendar } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const customers = [
-  { id: 1, name: 'Rahul Sharma', phone: '+91 98765 43210', email: 'rahul@email.com', totalOrders: 24, totalSpent: 18500, lastVisit: '2 hours ago', loyaltyPoints: 185 },
-  { id: 2, name: 'Priya Mehta', phone: '+91 98765 43211', email: 'priya@email.com', totalOrders: 18, totalSpent: 12400, lastVisit: '1 day ago', loyaltyPoints: 124 },
-  { id: 3, name: 'Amit Kumar', phone: '+91 98765 43212', email: 'amit@email.com', totalOrders: 32, totalSpent: 28900, lastVisit: '3 hours ago', loyaltyPoints: 289 },
-  { id: 4, name: 'Neha Reddy', phone: '+91 98765 43213', email: 'neha@email.com', totalOrders: 15, totalSpent: 9200, lastVisit: '2 days ago', loyaltyPoints: 92 },
-  { id: 5, name: 'Vikash Patel', phone: '+91 98765 43214', email: 'vikash@email.com', totalOrders: 41, totalSpent: 35600, lastVisit: '5 hours ago', loyaltyPoints: 356 },
-  { id: 6, name: 'Sunita Devi', phone: '+91 98765 43215', email: 'sunita@email.com', totalOrders: 9, totalSpent: 5800, lastVisit: '5 days ago', loyaltyPoints: 58 },
-  { id: 7, name: 'Mohammed Ali', phone: '+91 98765 43216', email: 'ali@email.com', totalOrders: 28, totalSpent: 22100, lastVisit: '1 day ago', loyaltyPoints: 221 },
-  { id: 8, name: 'Lakshmi Iyer', phone: '+91 98765 43217', email: 'lakshmi@email.com', totalOrders: 12, totalSpent: 8900, lastVisit: '4 days ago', loyaltyPoints: 89 },
-];
+interface Customer {
+  id: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  totalSpent: number;
+  createdAt: string;
+  _count: { sales: number };
+  sales: { createdAt: string }[];
+}
+
+function timeAgo(dateStr: string): string {
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins} min ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  const diffMonths = Math.floor(diffDays / 30);
+  return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
+}
 
 export default function CustomersPage() {
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState('');
-  const filtered = customers.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search));
+  const [isLoading, setIsLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
+  const [formError, setFormError] = useState('');
+
+  const fetchCustomers = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/customers?q=${encodeURIComponent(search)}`);
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      setCustomers(data);
+    } catch (e) {
+      console.error('Fetch customers error:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(fetchCustomers, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const openAddModal = () => {
+    setEditingCustomer(null);
+    setFormData({ name: '', phone: '', email: '' });
+    setFormError('');
+    setShowModal(true);
+  };
+
+  const openEditModal = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setFormData({ name: customer.name, phone: customer.phone, email: customer.email || '' });
+    setFormError('');
+    setShowModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim() || !formData.phone.trim()) {
+      setFormError('Name and Phone are required');
+      return;
+    }
+    setSaving(true);
+    setFormError('');
+
+    try {
+      const url = editingCustomer ? `/api/customers/${editingCustomer.id}` : '/api/customers';
+      const method = editingCustomer ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          phone: formData.phone.trim(),
+          email: formData.email.trim() || undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setFormError(data.error || 'Something went wrong');
+        setSaving(false);
+        return;
+      }
+
+      setShowModal(false);
+      fetchCustomers();
+    } catch {
+      setFormError('Network error. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/customers/${deleteId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setDeleteId(null);
+        fetchCustomers();
+      }
+    } catch (e) {
+      console.error('Delete error:', e);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const totalRevenue = customers.reduce((s, c) => s + c.totalSpent, 0);
+  const totalOrders = customers.reduce((s, c) => s + c._count.sales, 0);
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-text-primary">Customers</h1>
-          <p className="text-sm text-text-muted mt-0.5">{customers.length} registered customers</p>
+          <h1 className="text-2xl font-black text-text-primary tracking-tight">Customers</h1>
+          <p className="text-sm text-text-muted mt-0.5">
+            {isLoading ? 'Loading...' : `${customers.length} registered customers`}
+          </p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-dark shadow-md transition-all">
+        <button
+          onClick={openAddModal}
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all"
+        >
           <Plus className="w-4 h-4" /> Add Customer
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { label: 'Total Customers', value: customers.length, icon: Users, color: 'bg-primary/10 text-primary' },
-          { label: 'Total Revenue', value: `₹${customers.reduce((s, c) => s + c.totalSpent, 0).toLocaleString()}`, icon: IndianRupee, color: 'bg-secondary-green/10 text-secondary-green' },
-          { label: 'Total Orders', value: customers.reduce((s, c) => s + c.totalOrders, 0), icon: IndianRupee, color: 'bg-analytics-purple/10 text-analytics-purple' },
+          { label: 'Total Customers', value: customers.length, icon: Users, color: 'text-primary bg-primary/10' },
+          { label: 'Total Revenue', value: `₹${totalRevenue.toLocaleString('en-IN')}`, icon: IndianRupee, color: 'text-secondary-green bg-secondary-green/10' },
+          { label: 'Total Orders', value: totalOrders, icon: ShoppingCart, color: 'text-analytics-purple bg-analytics-purple/10' },
         ].map((stat, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-            className="bg-white rounded-xl p-4 border border-border/50 flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.color}`}><stat.icon className="w-5 h-5" /></div>
+          <motion.div key={i} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
+            className="bg-white rounded-2xl p-5 border border-border shadow-sm flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${stat.color}`}>
+              <stat.icon className="w-6 h-6" />
+            </div>
             <div>
-              <p className="text-xl font-extrabold text-text-primary">{stat.value}</p>
-              <p className="text-xs text-text-muted">{stat.label}</p>
+              <p className="text-2xl font-black text-text-primary">{stat.value}</p>
+              <p className="text-xs font-bold text-text-muted uppercase tracking-wider">{stat.label}</p>
             </div>
           </motion.div>
         ))}
@@ -51,49 +174,265 @@ export default function CustomersPage() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-        <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-          placeholder="Search customers..." />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full pl-11 pr-4 py-3 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+          placeholder="Search by name or phone number..."
+        />
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-border/50 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-page-bg border-b border-border/50">
-              <th className="text-left py-3 px-4 font-semibold text-text-muted text-xs">Customer</th>
-              <th className="text-left py-3 px-4 font-semibold text-text-muted text-xs">Phone</th>
-              <th className="text-left py-3 px-4 font-semibold text-text-muted text-xs">Orders</th>
-              <th className="text-left py-3 px-4 font-semibold text-text-muted text-xs">Total Spent</th>
-              <th className="text-left py-3 px-4 font-semibold text-text-muted text-xs">Last Visit</th>
-              <th className="text-left py-3 px-4 font-semibold text-text-muted text-xs">Points</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((customer) => (
-              <tr key={customer.id} className="border-b border-border/30 hover:bg-page-bg/50 transition-colors cursor-pointer">
-                <td className="py-3 px-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                      <span className="text-xs font-bold text-primary">{customer.name.split(' ').map(n => n[0]).join('')}</span>
-                    </div>
-                    <div>
-                      <p className="font-medium">{customer.name}</p>
-                      <p className="text-[10px] text-text-muted">{customer.email}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="py-3 px-4 text-text-muted">{customer.phone}</td>
-                <td className="py-3 px-4 font-medium">{customer.totalOrders}</td>
-                <td className="py-3 px-4 font-medium">₹{customer.totalSpent.toLocaleString()}</td>
-                <td className="py-3 px-4 text-text-muted">{customer.lastVisit}</td>
-                <td className="py-3 px-4"><span className="px-2 py-0.5 bg-accent-amber/10 text-accent-amber rounded-full text-[10px] font-semibold">{customer.loyaltyPoints} pts</span></td>
+      <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-page-bg/50 border-b border-border/50">
+                <th className="text-left py-4 px-6 font-bold text-text-muted text-[11px] uppercase tracking-wider">Customer</th>
+                <th className="text-left py-4 px-6 font-bold text-text-muted text-[11px] uppercase tracking-wider">Phone</th>
+                <th className="text-center py-4 px-6 font-bold text-text-muted text-[11px] uppercase tracking-wider">Orders</th>
+                <th className="text-right py-4 px-6 font-bold text-text-muted text-[11px] uppercase tracking-wider">Total Spent</th>
+                <th className="text-left py-4 px-6 font-bold text-text-muted text-[11px] uppercase tracking-wider">Last Visit</th>
+                <th className="text-center py-4 px-6 font-bold text-text-muted text-[11px] uppercase tracking-wider">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-border/30">
+              {isLoading && customers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-20 text-center">
+                    <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
+                    <p className="text-sm text-text-muted mt-3">Loading customers...</p>
+                  </td>
+                </tr>
+              ) : !isLoading && customers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-20 text-center">
+                    <Users className="w-12 h-12 text-text-muted/30 mx-auto mb-3" />
+                    <p className="text-sm font-medium text-text-muted">
+                      {search ? 'No customers match your search' : 'No customers yet'}
+                    </p>
+                    {!search && (
+                      <p className="text-xs text-text-muted mt-1">Customers will appear here when they make a purchase or are added manually.</p>
+                    )}
+                  </td>
+                </tr>
+              ) : (
+                customers.map((customer) => {
+                  const lastSaleDate = customer.sales?.[0]?.createdAt;
+                  return (
+                    <tr key={customer.id} className="hover:bg-page-bg/20 transition-colors group">
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
+                            <span className="text-xs font-black text-primary">
+                              {customer.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-bold text-text-primary">{customer.name}</p>
+                            <p className="text-[10px] text-text-muted flex items-center gap-1">
+                              {customer.email ? (
+                                <><Mail className="w-2.5 h-2.5" /> {customer.email}</>
+                              ) : (
+                                <span className="text-text-muted/50">No email</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className="flex items-center gap-1.5 text-text-muted">
+                          <Phone className="w-3 h-3" /> {customer.phone}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-center">
+                        <span className="font-black text-text-primary">{customer._count.sales}</span>
+                      </td>
+                      <td className="py-4 px-6 text-right font-bold text-primary">
+                        ₹{customer.totalSpent.toLocaleString('en-IN')}
+                      </td>
+                      <td className="py-4 px-6">
+                        {lastSaleDate ? (
+                          <span className="flex items-center gap-1.5 text-text-muted text-xs">
+                            <Calendar className="w-3 h-3" /> {timeAgo(lastSaleDate)}
+                          </span>
+                        ) : (
+                          <span className="text-text-muted/40 text-xs">No purchases</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => openEditModal(customer)}
+                            className="p-1.5 rounded-lg hover:bg-primary/10 text-text-muted hover:text-primary transition-colors"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteId(customer.id)}
+                            className="p-1.5 rounded-lg hover:bg-error/10 text-text-muted hover:text-error transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* Add/Edit Customer Modal */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+            onClick={() => setShowModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', duration: 0.4 }}
+              className="bg-white rounded-2xl w-full max-w-md shadow-2xl border border-border overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
+                <h2 className="text-lg font-black text-text-primary">
+                  {editingCustomer ? 'Edit Customer' : 'Add New Customer'}
+                </h2>
+                <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-page-bg transition-colors">
+                  <X className="w-5 h-5 text-text-muted" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                {formError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 bg-error/5 border border-error/20 rounded-xl text-error text-sm font-medium"
+                  >
+                    {formError}
+                  </motion.div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-bold text-text-primary mb-1.5">Customer Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-input-bg border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                    placeholder="e.g. Rahul Sharma"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-text-primary mb-1.5">Phone Number *</label>
+                  <input
+                    type="tel"
+                    required
+                    value={formData.phone}
+                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-input-bg border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                    placeholder="e.g. 9876543210"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-text-primary mb-1.5">Email (Optional)</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-input-bg border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                    placeholder="e.g. rahul@email.com"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="flex-1 px-4 py-2.5 bg-page-bg text-text-muted font-bold text-sm rounded-xl hover:bg-border/50 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white font-bold text-sm rounded-xl hover:bg-primary-dark shadow-lg shadow-primary/20 disabled:opacity-50 transition-all"
+                  >
+                    {saving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : editingCustomer ? (
+                      'Save Changes'
+                    ) : (
+                      'Add Customer'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+            onClick={() => setDeleteId(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl w-full max-w-sm shadow-2xl border border-border p-6 text-center"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="w-14 h-14 bg-error/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-7 h-7 text-error" />
+              </div>
+              <h3 className="text-lg font-black text-text-primary mb-1">Delete Customer?</h3>
+              <p className="text-sm text-text-muted mb-6">
+                This action cannot be undone. All customer data will be permanently removed.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteId(null)}
+                  className="flex-1 px-4 py-2.5 bg-page-bg text-text-muted font-bold text-sm rounded-xl hover:bg-border/50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-error text-white font-bold text-sm rounded-xl hover:bg-red-700 disabled:opacity-50 transition-all"
+                >
+                  {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Delete'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -23,6 +23,17 @@ model Shop {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  // Onboarding fields
+  businessType        String?
+  gstin               String?
+  gstRegistered       Boolean  @default(false)
+  gstRegistrationType String?
+  gstLegalName        String?
+  gstTradeName        String?
+  gstRegisteredOn     DateTime?
+  language            String   @default("English")
+  onboardingCompleted Boolean  @default(false)
+
   stores           Store[]
   users            User[]
   subscriptions    Subscription[]
@@ -32,6 +43,7 @@ model Shop {
   sales            Sale[]
   suppliers        Supplier[]
   purchaseOrders   PurchaseOrder[]
+  preferences      ShopPreferences?
 
   @@map("shops")
 }
@@ -59,6 +71,10 @@ model Store {
   id        String   @id @default(cuid())
   name      String
   location  String?
+  address   String?
+  city      String?
+  state     String?
+  pincode   String?
   
   shopId    String
   shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
@@ -143,9 +159,11 @@ model Supplier {
 model Product {
   id            String   @id @default(cuid())
   name          String
+  description   String?
   barcode       String?
   price         Float
   costPrice     Float?
+  taxRate       Float    @default(0)  // GST rate in % e.g. 18 for 18%
   stockQuantity Int      @default(0)
   imageUrl      String?
   createdAt     DateTime @default(now())
@@ -318,4 +336,21 @@ model VerificationToken {
   @@unique([phone, token])
   @@unique([email, token])
   @@map("verification_tokens")
+}
+
+// ============================================
+// 16. SHOP PREFERENCES (Onboarding Settings)
+// ============================================
+model ShopPreferences {
+  id                 String  @id @default(cuid())
+  enableDiscounts    Boolean @default(true)
+  additionalCharges  Boolean @default(true)
+  soundNotifications Boolean @default(true)
+  emailNotifications Boolean @default(false)
+  invoicePdf         Boolean @default(false)
+
+  shopId             String  @unique
+  shop               Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@map("shop_preferences")
 }
