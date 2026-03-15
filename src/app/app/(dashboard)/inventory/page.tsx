@@ -143,6 +143,58 @@ export default function InventoryPage() {
           )}
         </div>
       </div>
+
+      {/* Inventory Alerts Slide-over Modal */}
+      <AnimatePresence>
+        {showAlerts && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm"
+              onClick={() => setShowAlerts(false)}
+            />
+            <motion.div
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col border-l border-border"
+            >
+              <div className="px-6 py-5 border-b border-border flex items-center justify-between bg-page-bg/50">
+                <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                  <Bell className="w-5 h-5 text-accent-amber animate-bounce" /> Inventory Alerts
+                </h2>
+                <button onClick={() => setShowAlerts(false)} className="p-2 rounded-full hover:bg-gray-200 text-text-muted transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <p className="text-sm text-text-muted mb-6">These items are falling below their required stock levels and need immediate reordering.</p>
+                
+                {inventoryItems.filter(i => i.status === 'Out of Stock' || i.status === 'Critical' || i.status === 'Low Stock').map(item => (
+                  <div key={item.id} className="bg-white border border-border rounded-xl p-4 flex items-center justify-between shadow-sm">
+                    <div>
+                      <h4 className="font-bold text-text-primary">{item.name}</h4>
+                      <p className="text-xs text-text-muted mt-0.5">SKU: {item.sku} | Reorder: {item.reorderLevel}</p>
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-2">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        item.status === 'Out of Stock' ? 'bg-error text-white' :
+                        item.status === 'Critical' ? 'bg-red-100 text-error' :
+                        'bg-amber-100 text-accent-amber'
+                      }`}>
+                        {item.stock} left
+                      </span>
+                      <button className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
+                        <RefreshCw className="w-3 h-3" /> Order Mix
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

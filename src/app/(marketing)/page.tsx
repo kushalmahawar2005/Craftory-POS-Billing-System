@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import {
   ShoppingCart, BarChart3, Package, Users, Store, Receipt, MessageSquare,
   FileText, ArrowRight, Check, Star, Zap, Shield, Globe, TrendingUp,
@@ -46,6 +47,16 @@ const testimonials = [
 ];
 
 export default function HomePage() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null; // or a simple loading skeleton to prevent hydration mismatch
+  }
+
   return (
     <>
       {/* Hero Section */}

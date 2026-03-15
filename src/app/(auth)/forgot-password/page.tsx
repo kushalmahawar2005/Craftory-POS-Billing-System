@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, ArrowRight, ArrowLeft, ShoppingCart } from 'lucide-react';
+import { Mail, ArrowRight, ArrowLeft, ShoppingCart, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ForgotPasswordPage() {
@@ -39,9 +39,26 @@ export default function ForgotPasswordPage() {
           <Mail className="w-8 h-8 text-secondary-green" />
         </div>
         <h1 className="text-2xl font-extrabold text-text-primary">Check your email</h1>
-        <p className="text-sm text-text-muted mt-2 mb-8">
+        <p className="text-sm text-text-muted mt-2 mb-6">
           We&apos;ve sent password reset instructions to <span className="font-semibold text-text-primary">{email}</span>
         </p>
+
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-left mb-8 flex gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-semibold text-amber-800">Demo Environment</h3>
+            <p className="text-xs text-amber-700 mt-1">
+              Since this is a demo, no actual email was sent. In a production environment, you would receive an email with a secure link.
+            </p>
+            <Link
+              href="/login"
+              className="inline-block mt-3 px-4 py-2 bg-amber-600 text-white text-xs font-semibold rounded-lg hover:bg-amber-700 transition-colors"
+            >
+              Simulate Reset & Return to Login
+            </Link>
+          </div>
+        </div>
+
         <Link
           href="/login"
           className="inline-flex items-center gap-2 text-sm text-primary font-semibold hover:text-primary-dark transition-colors"

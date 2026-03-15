@@ -7,6 +7,7 @@ import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, Smartp
 type CartItem = { id: string; name: string; price: number; qty: number };
 
 export default function POSPage() {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [products, setProducts] = useState<any[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -115,6 +116,42 @@ export default function POSPage() {
       </div>
     );
   }
+
+  // Listen for return from checkout
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('status') === 'timeout') {
+      alert("Payment checkout session expired after 5 minutes.");
+      router.replace('/app/pos'); // Clear param after alert
+    }
+  }, [searchParams, router]);
+
+  const handleCompleteSale = () => {
+    // Navigate to the dedicated checkout page with the query params
+    const amountStr = total.toFixed(2);
+    
+    // Save current order data to sessionStorage to recover it after checkout redirects back
+    sessionStorage.setItem('pos_cart', JSON.stringify(cart));
+    sessionStorage.setItem('pos_discount', discount.toString());
+    sessionStorage.setItem('pos_customer', customerName);
+    
+    router.push(`/app/checkout?amount=${amountStr}`);
+  };
+
+  const startNewSale = () => {
+    setCart([]);
+    setCustomerName('');
+    setDiscount(0);
+    setPaymentMethod('cash');
+    setCashTendered('');
+    
+    // Clear storage
+    sessionStorage.removeItem('pos_cart');
+    sessionStorage.removeItem('pos_discount');
+    sessionStorage.removeItem('pos_customer');
+    
+    router.replace('/app/pos'); // Clear success params
+  };
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-112px)]">
@@ -270,6 +307,8 @@ export default function POSPage() {
           </button>
         </div>
       </div>
+
+      {/* No more modals here! Navigated flow handles Checkout -> Receipt */}
     </div>
   );
 }
