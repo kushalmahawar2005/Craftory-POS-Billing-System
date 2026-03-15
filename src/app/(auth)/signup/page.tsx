@@ -11,6 +11,7 @@ export default function SignupPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState<'form' | 'otp'>('form');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -87,6 +88,23 @@ export default function SignupPage() {
       setLoading(false);
       setOtp(['1', '2', '3', '4', '5', '6']);
     }, 600);
+  };
+
+  const handleGoogleSignup = () => {
+    setLoadingGoogle(true);
+    setError('');
+    
+    // Simulate OAuth redirect and sign up for demo purposes
+    setTimeout(() => {
+      localStorage.setItem('token', 'demo-google-signup-token-123');
+      localStorage.setItem('user', JSON.stringify({
+        id: 'google-new-user',
+        email: 'demo-new@gmail.com',
+        name: 'Google User',
+        role: 'OWNER'
+      }));
+      window.location.href = '/app/onboarding';
+    }, 1500);
   };
 
   if (step === 'otp') {
@@ -250,7 +268,7 @@ export default function SignupPage() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || loadingGoogle}
           className="w-full h-11 flex items-center justify-center gap-2 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark shadow-lg shadow-primary/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm"
         >
           {loading ? (
