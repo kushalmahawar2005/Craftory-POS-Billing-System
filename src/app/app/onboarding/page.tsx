@@ -17,6 +17,7 @@ const steps = [
 ];
 
 export default function OnboardingPage() {
+  const [mounted, setMounted] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
@@ -121,6 +122,9 @@ export default function OnboardingPage() {
     }
   };
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const prev = () => { if (currentStep > 1) setCurrentStep(currentStep - 1); };
 
   const inputClass = "w-full px-4 py-2.5 bg-input-bg border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all";
@@ -135,6 +139,10 @@ export default function OnboardingPage() {
         </div>
       </div>
     );
+  }
+
+  if (!mounted) {
+    return null;
   }
 
   return (

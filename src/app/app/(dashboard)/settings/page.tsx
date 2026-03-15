@@ -9,8 +9,8 @@ const settingsSections = [
   { id: 'tax', label: 'Tax & GST', icon: FileText },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'receipt', label: 'Receipt Template', icon: Printer },
-  { id: 'users', label: 'User Management', icon: Users },
   { id: 'security', label: 'Security', icon: Shield },
+  { id: 'backup', label: 'Database Backup', icon: Database },
 ];
 
 export default function SettingsPage() {
@@ -258,7 +258,19 @@ export default function SettingsPage() {
                         <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${user.status === 'Active' ? 'bg-secondary-green/10 text-secondary-green' : 'bg-gray-100 text-text-muted'}`}>{user.status}</span>
                       </div>
                     </div>
-                  ))}
+                    <button className="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-lg text-sm font-semibold text-text-primary hover:bg-gray-50 transition-all">
+                      <Download className="w-4 h-4" /> Download Backup
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-page-bg rounded-lg border border-border/50">
+                    <div>
+                      <p className="text-sm font-semibold text-text-primary">Product Database Export</p>
+                      <p className="text-xs text-text-muted">Download a CSV of your entire catalog for bulk editing.</p>
+                    </div>
+                    <button className="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-lg text-sm font-semibold text-text-primary hover:bg-gray-50 transition-all">
+                      <Download className="w-4 h-4" /> Export CSV
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

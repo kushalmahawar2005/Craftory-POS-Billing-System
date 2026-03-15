@@ -7,7 +7,8 @@ import { motion } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingCart, Package, BarChart3, Users, Settings,
   ChevronLeft, ChevronRight, Bell, Search, LogOut, Menu, X, Store,
-  FileText, Truck, ClipboardList, Shield
+  FileText, Truck, ClipboardList, Shield, UserCog
+
 } from 'lucide-react';
 
 interface NavItem {
@@ -23,14 +24,17 @@ const navItems: NavItem[] = [
   { label: 'Inventory', icon: Package, href: '/app/inventory' },
   { label: 'Products', icon: Store, href: '/app/products', roles: ['ADMIN', 'MANAGER'] },
   { label: 'Suppliers', icon: Truck, href: '/app/suppliers', roles: ['ADMIN', 'MANAGER'] },
+  { label: 'Staff', icon: UserCog, href: '/app/staff', roles: ['ADMIN'] },
   { label: 'Purchase Orders', icon: ClipboardList, href: '/app/purchase-orders', roles: ['ADMIN', 'MANAGER'] },
   { label: 'Reports', icon: BarChart3, href: '/app/reports', roles: ['ADMIN', 'MANAGER'] },
   { label: 'Customers', icon: Users, href: '/app/customers', roles: ['ADMIN', 'MANAGER'] },
+
   { label: 'Invoices', icon: FileText, href: '/app/invoices' },
   { label: 'Settings', icon: Settings, href: '/app/settings', roles: ['ADMIN'] },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -55,6 +59,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Filter nav items based on user role
   const visibleNavItems = navItems.filter(item => {
     if (!item.roles) return true; // visible to all
@@ -67,6 +75,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     MANAGER: 'bg-blue-500/20 text-blue-400',
     CASHIER: 'bg-green-500/20 text-green-400',
   };
+
+  if (!mounted) {
+    return (
+      <div className="flex h-screen bg-page-bg">
+        <div className="w-[240px] hidden lg:block bg-sidebar-dark" />
+        <div className="flex-1" />
+      </div>
+    );
+  }
+
 
   return (
     <div className="flex h-screen bg-page-bg overflow-hidden">

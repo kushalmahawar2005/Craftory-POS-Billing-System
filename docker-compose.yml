@@ -1,21 +1,54 @@
-# Craftory POS - PostgreSQL Database
-# Start: docker compose up -d
-# Stop:  docker compose down
-# Logs:  docker compose logs db
 
 services:
+  # 1. DATABASE: PostgreSQL 16
   db:
     image: postgres:16-alpine
     container_name: craftory_pos_db
     restart: unless-stopped
     ports:
-      - "5433:5432"
+      - "${DB_EXTERNAL_PORT:-5433}:5432"
     environment:
-      POSTGRES_USER: craftory_admin
-      POSTGRES_PASSWORD: Craftory@POS2026
-      POSTGRES_DB: craftory_pos
+      POSTGRES_USER: ${DB_USER:-craftory_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-Craftory@POS2026}
+      POSTGRES_DB: ${DB_NAME:-craftory_pos}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-craftory_admin} -d ${DB_NAME:-craftory_pos}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - craftory_pg_data:/var/lib/postgresql/data
+
+  # 2. APP: Next.js Frontend & API
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: craftory_pos_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://${DB_USER:-craftory_admin}:${DB_PASSWORD:-Craftory@POS2026}@db:5432/${DB_NAME:-craftory_pos}?schema=public"
+      JWT_SECRET: ${JWT_SECRET:-craftory-pos-jwt-secret-key-2026-super-secure}
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+
+  # 3. GUI: Adminer for easy Database Management
+  adminer:
+    image: adminer:latest
+    container_name: craftory_pos_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
 
 volumes:
   craftory_pg_data:

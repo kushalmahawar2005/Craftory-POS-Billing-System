@@ -5,7 +5,14 @@ import { motion } from 'framer-motion';
 import { Calendar, Download, TrendingUp, IndianRupee, ShoppingCart, Package, Loader2 } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
+const gstData = [
+  { id: 'GST-Mar-01', period: 'Mar 1-7, 2026', totalTaxable: 145000, cgst: 6525, sgst: 6525, totalGst: 13050, status: 'Filed' },
+  { id: 'GST-Mar-02', period: 'Mar 8-14, 2026', totalTaxable: 162000, cgst: 7290, sgst: 7290, totalGst: 14580, status: 'Draft' },
+  { id: 'GST-Feb-04', period: 'Feb 21-28, 2026', totalTaxable: 138000, cgst: 6210, sgst: 6210, totalGst: 12420, status: 'Filed' },
+];
+
 export default function ReportsPage() {
+  const [reportType, setReportType] = useState<'sales' | 'gst'>('sales');
   const [period, setPeriod] = useState('weekly');
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({ todayRevenue: 0, monthRevenue: 0, totalSales: 0, lowStock: 0 });

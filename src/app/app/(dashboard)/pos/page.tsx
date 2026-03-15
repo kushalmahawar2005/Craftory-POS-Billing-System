@@ -1,17 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, Smartphone, Percent, User, Loader2, CheckCircle2, Package } from 'lucide-react';
 
 type CartItem = { id: string; name: string; price: number; qty: number };
 
 export default function POSPage() {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [products, setProducts] = useState<any[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
+  const [cashTendered, setCashTendered] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -115,6 +118,21 @@ export default function POSPage() {
       </div>
     );
   }
+
+  const startNewSale = () => {
+    setCart([]);
+    setCustomerName('');
+    setDiscount(0);
+    setPaymentMethod('CASH');
+    setCashTendered('');
+    
+    // Clear storage
+    sessionStorage.removeItem('pos_cart');
+    sessionStorage.removeItem('pos_discount');
+    sessionStorage.removeItem('pos_customer');
+    
+    router.replace('/app/pos'); 
+  };
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-112px)]">
@@ -270,6 +288,8 @@ export default function POSPage() {
           </button>
         </div>
       </div>
+
+      {/* No more modals here! Navigated flow handles Checkout -> Receipt */}
     </div>
   );
 }

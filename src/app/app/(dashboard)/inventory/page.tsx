@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Search, Plus, Package, AlertTriangle, TrendingDown, Loader2, History, ArrowUpCircle, ArrowDownCircle, RefreshCw } from 'lucide-react';
+import { Search, Plus, Package, AlertTriangle, TrendingDown, Loader2, History, ArrowUpCircle, ArrowDownCircle, RefreshCw, X, Bell } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Log {
   id: string;
@@ -21,6 +21,7 @@ export default function InventoryPage() {
   const [activeTab, setActiveTab] = useState<'inventory' | 'logs'>('inventory');
   const [isLoading, setIsLoading] = useState(true);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [showAlerts, setShowAlerts] = useState(false);
 
   const fetchInventory = async () => {
     setIsLoading(true);
@@ -82,10 +83,16 @@ export default function InventoryPage() {
           <h1 className="text-2xl font-black text-text-primary tracking-tight">Stock Inventory</h1>
           <p className="text-sm text-text-muted mt-0.5">{products.length} products · Total Value: ₹{totalValue.toLocaleString('en-IN')}</p>
         </div>
-        <button onClick={() => window.location.href = '/app/products'}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all">
-          <Plus className="w-4 h-4" /> Manage Products
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setShowAlerts(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-border text-text-primary text-sm font-bold rounded-xl hover:bg-gray-50 transition-all">
+            <Bell className={`w-4 h-4 ${lowStockCount + outStockCount > 0 ? 'text-accent-amber fill-accent-amber animate-pulse' : ''}`} /> Stock Alerts
+          </button>
+          <button onClick={() => window.location.href = '/app/products'}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all">
+            <Plus className="w-4 h-4" /> Manage Products
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -239,6 +246,64 @@ export default function InventoryPage() {
           </div>
         </div>
       )}
+
+      {/* Inventory Alerts Slide-over Modal */}
+      <AnimatePresence>
+        {showAlerts && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm"
+              onClick={() => setShowAlerts(false)}
+            />
+            <motion.div
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col border-l border-border"
+            >
+              <div className="px-6 py-5 border-b border-border flex items-center justify-between bg-page-bg/50">
+                <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-accent-amber animate-bounce" /> Inventory Alerts
+                </h2>
+                <button onClick={() => setShowAlerts(false)} className="p-2 rounded-full hover:bg-gray-200 text-text-muted transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <p className="text-sm text-text-muted mb-6">These items are falling below their required stock levels and need immediate reordering.</p>
+                
+                {products.filter(i => i.stockQuantity <= 10).map(item => (
+                  <div key={item.id} className="bg-white border border-border rounded-xl p-4 flex items-center justify-between shadow-sm">
+                    <div>
+                      <h4 className="font-bold text-text-primary">{item.name}</h4>
+                      <p className="text-xs text-text-muted mt-0.5">Barcode: {item.barcode || 'N/A'} | Category: {item.category?.name || 'General'}</p>
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-2">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        item.stockQuantity <= 0 ? 'bg-error text-white' :
+                        'bg-amber-100 text-accent-amber'
+                      }`}>
+                        {item.stockQuantity} left
+                      </span>
+                      <button className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
+                        <RefreshCw className="w-3 h-3" /> Order More
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {products.filter(i => i.stockQuantity <= 10).length === 0 && (
+                  <div className="py-20 text-center">
+                    <Package className="w-12 h-12 text-text-muted/20 mx-auto mb-3" />
+                    <p className="text-sm font-medium text-text-muted">All stock levels are healthy!</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

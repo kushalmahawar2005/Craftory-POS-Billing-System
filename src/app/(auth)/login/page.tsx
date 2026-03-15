@@ -16,6 +16,7 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState(urlError || '');
 
   useEffect(() => {
@@ -47,6 +48,23 @@ function LoginForm() {
       setError('Something went wrong. Please try again.');
       setLoading(false);
     }
+  };
+
+  const handleGoogleLogin = () => {
+    setLoadingGoogle(true);
+    setError('');
+    
+    // Simulate OAuth redirect and login for demo purposes
+    setTimeout(() => {
+      localStorage.setItem('token', 'demo-google-token-123');
+      localStorage.setItem('user', JSON.stringify({
+        id: 'google-user',
+        email: 'demo@gmail.com',
+        name: 'Google User',
+        role: 'OWNER'
+      }));
+      window.location.href = '/app/dashboard';
+    }, 1500);
   };
 
   return (
@@ -133,7 +151,7 @@ function LoginForm() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || loadingGoogle}
           className="w-full h-11 flex items-center justify-center gap-2 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark shadow-lg shadow-primary/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm mt-2"
         >
           {loading ? (

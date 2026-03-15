@@ -97,6 +97,8 @@ model User {
   email        String   @unique
   passwordHash String
   role         Role     @default(CASHIER)
+  phone        String?
+  status       String   @default("Active")
   isVerified   Boolean  @default(false)
   createdAt    DateTime @default(now())
   
@@ -117,6 +119,7 @@ enum Role {
   ADMIN
   MANAGER
   CASHIER
+  INVENTORY_CLERK
 }
 
 // ============================================
