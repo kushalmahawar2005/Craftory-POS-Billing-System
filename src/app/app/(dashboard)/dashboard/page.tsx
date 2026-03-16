@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   TrendingUp, TrendingDown, ShoppingCart, Package, Users, IndianRupee,
-  BarChart3, ArrowUpRight, ArrowDownRight, MoreHorizontal
+  BarChart3, ArrowUpRight, ArrowDownRight, MoreHorizontal, RotateCcw, HandCoins
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
@@ -20,21 +20,21 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [sumRes, chartRes, salesRes, bestRes, catRes, lowRes] = await Promise.all([
+        const [sumRes, chartRes, recentRes, topRes, catRes, lowRes] = await Promise.all([
           fetch('/api/reports/analytics?type=summary').then(r => r.json()),
           fetch('/api/reports/analytics?type=sales_chart').then(r => r.json()),
-          fetch('/api/sales?limit=5').then(r => r.json()),
-          fetch('/api/reports/analytics?type=best_sellers').then(r => r.json()),
+          fetch('/api/reports/analytics?type=recent_sales').then(r => r.json()),
+          fetch('/api/reports/analytics?type=top_products').then(r => r.json()),
           fetch('/api/reports/analytics?type=categories').then(r => r.json()),
           fetch('/api/reports/analytics?type=low_stock').then(r => r.json())
         ]);
 
         setSummary(sumRes);
         setChartData(chartRes);
-        setRecentOrders(salesRes.sales || []);
-        setBestSellers(bestRes);
-        setCategoryData(catRes);
-        setLowStock(lowRes);
+        setRecentOrders(recentRes || []);
+        setBestSellers(topRes || []);
+        setCategoryData(catRes || []);
+        setLowStock(lowRes || []);
       } catch (error) {
         console.error('Dashboard Load Error:', error);
       } finally {
@@ -78,12 +78,36 @@ export default function DashboardPage() {
       icon: Users,
       color: 'bg-accent-amber/10 text-accent-amber'
     },
+    {
+      label: 'Outstanding Credit',
+      value: `₹${summary?.outstandingCredit?.toLocaleString() || '0'}`,
+      change: 'To Collect',
+      up: false,
+      icon: HandCoins,
+      color: 'bg-red-50 text-error'
+    },
+    {
+      label: 'Monthly Returns',
+      value: `₹${summary?.returnsMonth?.toLocaleString() || '0'}`,
+      change: 'Refunds',
+      up: false,
+      icon: RotateCcw,
+      color: 'bg-orange-50 text-orange-600'
+    },
   ];
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="space-y-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-white rounded-xl p-5 border border-border/50 animate-pulse h-28" />
+          ))}
+        </div>
+        <div className="grid lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 bg-white rounded-xl p-5 border border-border/50 animate-pulse h-80" />
+          <div className="bg-white rounded-xl p-5 border border-border/50 animate-pulse h-80" />
+        </div>
       </div>
     );
   }
@@ -98,7 +122,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {stats.map((stat, i) => {
           const Icon = stat.icon;
           return (
@@ -218,7 +242,7 @@ export default function DashboardPage() {
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-text-primary">Recent Orders</h3>
-            <button className="text-xs text-primary font-bold hover:underline">View All</button>
+            <button className="text-xs text-primary font-bold hover:underline" onClick={() => window.location.href = '/app/invoices'}>View All</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -226,7 +250,7 @@ export default function DashboardPage() {
                 <tr className="text-[10px] text-text-muted uppercase tracking-wider border-b border-border/50">
                   <th className="pb-3 font-bold">Invoice</th>
                   <th className="pb-3 font-bold">Customer</th>
-                  <th className="pb-3 font-bold">Method</th>
+                  <th className="pb-3 font-bold">Items</th>
                   <th className="pb-3 font-bold text-right">Amount</th>
                 </tr>
               </thead>
@@ -234,10 +258,10 @@ export default function DashboardPage() {
                 {recentOrders.map((order: any, i: number) => (
                   <tr key={i} className="text-xs">
                     <td className="py-3.5 font-bold text-text-primary uppercase">{order.invoiceNumber}</td>
-                    <td className="py-3.5 text-text-muted">{order.customer?.name || 'Walk-in'}</td>
+                    <td className="py-3.5 text-text-muted">{order.customerName}</td>
                     <td className="py-3.5">
                       <span className="px-2 py-0.5 rounded-md bg-page-bg text-[10px] font-bold text-text-secondary uppercase">
-                        {order.paymentMethod}
+                        {order.itemsCount} Items
                       </span>
                     </td>
                     <td className="py-3.5 text-right font-black text-text-primary">₹{order.total.toLocaleString()}</td>
@@ -245,6 +269,9 @@ export default function DashboardPage() {
                 ))}
               </tbody>
             </table>
+            {recentOrders.length === 0 && (
+              <div className="py-10 text-center text-xs text-text-muted font-medium">No sales records found.</div>
+            )}
           </div>
         </motion.div>
 

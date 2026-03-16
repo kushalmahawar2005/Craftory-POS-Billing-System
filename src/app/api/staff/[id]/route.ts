@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { getAuthSession } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const session = await getAuthSession();
     if (!session || session.role !== 'ADMIN') {
         return NextResponse.json({ error: 'Only admins can manage staff' }, { status: 403 });
@@ -46,7 +46,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const session = await getAuthSession();
     if (!session || session.role !== 'ADMIN') {
         return NextResponse.json({ error: 'Only admins can manage staff' }, { status: 403 });

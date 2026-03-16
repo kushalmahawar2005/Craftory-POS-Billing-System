@@ -22,7 +22,10 @@ export async function GET(req: Request) {
                 lowStockCount,
                 totalCustomers,
                 totalProducts,
-                purchaseValue
+                purchaseValue,
+                creditSummary,
+                todayReturns,
+                monthReturns
             ] = await Promise.all([
                 db.sale.aggregate({
                     where: { shopId: session.shopId, createdAt: { gte: today } },
@@ -41,6 +44,18 @@ export async function GET(req: Request) {
                 db.purchaseOrder.aggregate({
                     where: { shopId: session.shopId, status: 'COMPLETED', createdAt: { gte: firstDayOfMonth } },
                     _sum: { totalAmount: true }
+                }),
+                db.customer.aggregate({
+                    where: { shopId: session.shopId },
+                    _sum: { currentBalance: true }
+                }),
+                db.saleReturn.aggregate({
+                    where: { shopId: session.shopId, createdAt: { gte: today } },
+                    _sum: { refundAmount: true }
+                }),
+                db.saleReturn.aggregate({
+                    where: { shopId: session.shopId, createdAt: { gte: firstDayOfMonth } },
+                    _sum: { refundAmount: true }
                 })
             ]);
 
@@ -51,7 +66,10 @@ export async function GET(req: Request) {
                 monthPurchases: purchaseValue._sum.totalAmount || 0,
                 lowStockItems: lowStockCount,
                 activeCustomers: totalCustomers,
-                totalSkus: totalProducts
+                totalSkus: totalProducts,
+                outstandingCredit: creditSummary._sum.currentBalance || 0,
+                returnsToday: todayReturns._sum.refundAmount || 0,
+                returnsMonth: monthReturns._sum.refundAmount || 0
             });
         }
 
@@ -75,6 +93,68 @@ export async function GET(req: Request) {
                 });
             }
             return NextResponse.json(last7Days);
+        }
+
+        if (type === 'top_products') {
+            const last30Days = new Date();
+            last30Days.setDate(last30Days.getDate() - 30);
+
+            const items = await db.saleItem.groupBy({
+                by: ['productId'],
+                where: { 
+                    sale: { 
+                        shopId: session.shopId,
+                        createdAt: { gte: last30Days }
+                    } 
+                },
+                _sum: { quantity: true, total: true },
+                orderBy: { _sum: { quantity: 'desc' } },
+                take: 10
+            });
+
+            const enriched = await Promise.all(items.map(async (item) => {
+                const product = await db.product.findUnique({
+                    where: { id: item.productId },
+                    select: { 
+                        name: true, 
+                        stockQuantity: true,
+                        category: { select: { name: true } }
+                    }
+                });
+                return {
+                    name: product?.name || 'Unknown',
+                    category: product?.category?.name || 'General',
+                    sold: item._sum.quantity || 0,
+                    revenue: item._sum.total || 0,
+                    stock: product?.stockQuantity || 0
+                };
+            }));
+
+            return NextResponse.json(enriched);
+        }
+
+        if (type === 'recent_sales') {
+            const sales = await db.sale.findMany({
+                where: { shopId: session.shopId },
+                orderBy: { createdAt: 'desc' },
+                take: 10,
+                include: {
+                    customer: { select: { name: true } },
+                    _count: { select: { items: true } }
+                }
+            });
+
+            const formatted = sales.map(sale => ({
+                id: sale.id,
+                invoiceNumber: sale.invoiceNumber,
+                customerName: sale.customer?.name || 'Walk-in Customer',
+                total: sale.total,
+                paymentMethod: sale.paymentMethod,
+                createdAt: sale.createdAt,
+                itemsCount: sale._count.items
+            }));
+
+            return NextResponse.json(formatted);
         }
 
         if (type === 'best_sellers') {
