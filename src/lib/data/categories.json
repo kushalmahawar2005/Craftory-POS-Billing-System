@@ -1,0 +1,174 @@
+[
+  {
+    "name": "Grocery & Food Staples",
+    "icon": "ShoppingCart",
+    "color": "#4ade80",
+    "children": [
+      {
+        "name": "Grains & Pulses",
+        "children": [
+          { "name": "Rice" },
+          { "name": "Wheat & Atta" },
+          { "name": "Pulses & Lentils" },
+          { "name": "Flour Products" }
+        ]
+      },
+      {
+        "name": "Oils & Spices",
+        "children": [
+          { "name": "Cooking Oils" },
+          { "name": "Spices & Masala" },
+          { "name": "Salt & Sugar" }
+        ]
+      },
+      { 
+        "name": "Dry Fruits & Nuts",
+        "children": [
+          { "name": "Almonds" },
+          { "name": "Cashews" }
+        ]
+      },
+      { "name": "Ready To Eat/Cook" },
+      { "name": "Breakfast Foods" },
+      { "name": "Beverages" }
+    ]
+  },
+  {
+    "name": "Beverages",
+    "icon": "Coffee",
+    "color": "#60a5fa",
+    "children": [
+      {
+        "name": "Soft Drinks & Juices",
+        "children": [
+          { "name": "Soft Drinks" },
+          { "name": "Fruit Juices" },
+          { "name": "Energy Drinks" }
+        ]
+      },
+      {
+        "name": "Tea & Coffee",
+        "children": [
+          { "name": "Tea" },
+          { "name": "Coffee" },
+          { "name": "Milk Beverages" }
+        ]
+      },
+      { "name": "Packaged Water" },
+      { "name": "Soda" },
+      { "name": "Alcoholic Beverages" }
+    ]
+  },
+  {
+    "name": "Jewelry & Accessories",
+    "icon": "Gem",
+    "color": "#fbbf24",
+    "children": [
+      {
+        "name": "Gold Jewelry",
+        "children": [
+          { "name": "Rings" },
+          { "name": "Necklaces" },
+          { "name": "Chains" },
+          { "name": "Earrings" },
+          { "name": "Bangles" }
+        ]
+      },
+      {
+        "name": "Silver Jewelry",
+        "children": [
+          { "name": "Anklets" },
+          { "name": "Rings" },
+          { "name": "Bracelets" }
+        ]
+      },
+      { "name": "Diamond Jewelry" },
+      { "name": "Fashion Accessories" },
+      { "name": "Watches" },
+      { "name": "Sunglasses" }
+    ]
+  },
+  {
+    "name": "Electronics & Gadgets",
+    "icon": "Smartphone",
+    "color": "#06b6d4",
+    "children": [
+      {
+        "name": "Mobiles & Accessories",
+        "children": [
+          { "name": "Smartphones" },
+          { "name": "Chargers" },
+          { "name": "Power Banks" },
+          { "name": "Cases & Covers" }
+        ]
+      },
+      {
+        "name": "Computing",
+        "children": [
+          { "name": "Laptops" },
+          { "name": "Desktop PC" },
+          { "name": "Monitors" },
+          { "name": "Storage Devices" }
+        ]
+      },
+      { "name": "Audio" },
+      { "name": "Smart Devices" }
+    ]
+  },
+  {
+    "name": "Clothing & Apparel",
+    "icon": "Shirt",
+    "color": "#d946ef",
+    "children": [
+      {
+        "name": "Men",
+        "children": [
+          { "name": "Topwear" },
+          { "name": "Bottomwear" },
+          { "name": "Footwear" }
+        ]
+      },
+      {
+        "name": "Women",
+        "children": [
+          { "name": "Ethnic Wear" },
+          { "name": "Western Wear" },
+          { "name": "Footwear" }
+        ]
+      },
+      { "name": "Kids" }
+    ]
+  },
+  {
+    "name": "Fruits & Vegetables",
+    "icon": "Apple",
+    "color": "#22c55e",
+    "children": [
+      { "name": "Fresh Fruits" },
+      { "name": "Fresh Vegetables" },
+      { "name": "Exotic Fruits" },
+      { "name": "Organic Vegetables" }
+    ]
+  },
+  {
+    "name": "Personal Care & Beauty",
+    "icon": "User",
+    "color": "#f472b6",
+    "children": [
+      { "name": "Skin Care" },
+      { "name": "Hair Care" },
+      { "name": "Oral Care" },
+      { "name": "Makeup" }
+    ]
+  },
+  {
+    "name": "Household & Cleaning",
+    "icon": "Sparkles",
+    "color": "#38bdf8",
+    "children": [
+      { "name": "Detergents" },
+      { "name": "Cleaners" },
+      { "name": "Tools" }
+    ]
+  }
+]

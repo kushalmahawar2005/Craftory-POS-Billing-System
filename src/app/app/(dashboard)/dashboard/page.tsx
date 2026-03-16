@@ -54,7 +54,7 @@ export default function DashboardPage() {
       color: 'bg-secondary-green/10 text-secondary-green'
     },
     {
-      label: 'Low Stock Items',
+      label: 'Low Stock Products',
       value: summary?.lowStockItems?.toString() || '0',
       change: 'Alert',
       up: false,

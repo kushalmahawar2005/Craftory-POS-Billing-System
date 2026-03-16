@@ -98,7 +98,7 @@ export default function InventoryPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
           { label: 'Total Products', value: products.length, icon: Package, color: 'text-primary bg-primary/10' },
-          { label: 'Low Stock Items', value: lowStockCount, icon: AlertTriangle, color: 'text-accent-amber bg-accent-amber/10' },
+          { label: 'Low Stock Products', value: lowStockCount, icon: AlertTriangle, color: 'text-accent-amber bg-accent-amber/10' },
           { label: 'Out of Stock', value: outStockCount, icon: TrendingDown, color: 'text-error bg-error/10' },
         ].map((stat, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
@@ -271,7 +271,7 @@ export default function InventoryPage() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                <p className="text-sm text-text-muted mb-6">These items are falling below their required stock levels and need immediate reordering.</p>
+                <p className="text-sm text-text-muted mb-6">These products are falling below their required stock levels and need immediate reordering.</p>
                 
                 {products.filter(i => i.stockQuantity <= 10).map(item => (
                   <div key={item.id} className="bg-white border border-border rounded-xl p-4 flex items-center justify-between shadow-sm">
