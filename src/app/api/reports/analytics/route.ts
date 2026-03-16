@@ -21,7 +21,8 @@ export async function GET(req: Request) {
                 monthSales,
                 lowStockCount,
                 totalCustomers,
-                totalProducts
+                totalProducts,
+                purchaseValue
             ] = await Promise.all([
                 db.sale.aggregate({
                     where: { shopId: session.shopId, createdAt: { gte: today } },
@@ -36,13 +37,18 @@ export async function GET(req: Request) {
                     where: { shopId: session.shopId, stockQuantity: { lte: 10 } }
                 }),
                 db.customer.count({ where: { shopId: session.shopId } }),
-                db.product.count({ where: { shopId: session.shopId } })
+                db.product.count({ where: { shopId: session.shopId } }),
+                db.purchaseOrder.aggregate({
+                    where: { shopId: session.shopId, status: 'COMPLETED', createdAt: { gte: firstDayOfMonth } },
+                    _sum: { totalAmount: true }
+                })
             ]);
 
             return NextResponse.json({
                 todayRevenue: todaySales._sum.total || 0,
                 todayOrders: todaySales._count || 0,
                 monthRevenue: monthSales._sum.total || 0,
+                monthPurchases: purchaseValue._sum.totalAmount || 0,
                 lowStockItems: lowStockCount,
                 activeCustomers: totalCustomers,
                 totalSkus: totalProducts
@@ -50,21 +56,16 @@ export async function GET(req: Request) {
         }
 
         if (type === 'sales_chart') {
-            // Last 7 days sales
             const last7Days = [];
             for (let i = 6; i >= 0; i--) {
                 const d = new Date();
                 d.setDate(d.getDate() - i);
                 d.setHours(0, 0, 0, 0);
-
                 const nextD = new Date(d);
                 nextD.setDate(nextD.getDate() + 1);
 
                 const daySales = await db.sale.aggregate({
-                    where: {
-                        shopId: session.shopId,
-                        createdAt: { gte: d, lt: nextD }
-                    },
+                    where: { shopId: session.shopId, createdAt: { gte: d, lt: nextD } },
                     _sum: { total: true }
                 });
 
@@ -74,6 +75,63 @@ export async function GET(req: Request) {
                 });
             }
             return NextResponse.json(last7Days);
+        }
+
+        if (type === 'best_sellers') {
+            const items = await db.saleItem.groupBy({
+                by: ['productId'],
+                where: { sale: { shopId: session.shopId } },
+                _sum: { quantity: true, total: true },
+                orderBy: { _sum: { quantity: 'desc' } },
+                take: 5
+            });
+
+            const enriched = await Promise.all(items.map(async (item) => {
+                const product = await db.product.findUnique({
+                    where: { id: item.productId },
+                    select: { name: true }
+                });
+                return {
+                    name: product?.name || 'Unknown',
+                    sold: item._sum.quantity || 0,
+                    revenue: item._sum.total || 0
+                };
+            }));
+
+            return NextResponse.json(enriched);
+        }
+
+        if (type === 'categories') {
+            const categories = await db.category.findMany({
+                where: { shopId: session.shopId },
+                include: {
+                    products: {
+                        include: {
+                            saleItems: {
+                                select: { total: true }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const data = categories.map(cat => ({
+                name: cat.name,
+                value: cat.products.reduce((acc, prod) => 
+                    acc + prod.saleItems.reduce((accI, item) => accI + item.total, 0), 0)
+            })).filter(c => c.value > 0);
+
+            return NextResponse.json(data);
+        }
+
+        if (type === 'low_stock') {
+            const products = await db.product.findMany({
+                where: { shopId: session.shopId, stockQuantity: { lte: 10 } },
+                orderBy: { stockQuantity: 'asc' },
+                take: 5,
+                select: { id: true, name: true, stockQuantity: true }
+            });
+            return NextResponse.json(products);
         }
 
         return NextResponse.json({ error: 'Invalid report type' }, { status: 400 });
