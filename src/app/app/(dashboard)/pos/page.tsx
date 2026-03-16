@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, Smartphone, Percent, User, Loader2, CheckCircle2, Package } from 'lucide-react';
 
@@ -13,6 +14,7 @@ export default function POSPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
+  const [cashTendered, setCashTendered] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -117,32 +119,11 @@ export default function POSPage() {
     );
   }
 
-  // Listen for return from checkout
-  const searchParams = useSearchParams();
-  useEffect(() => {
-    if (searchParams.get('status') === 'timeout') {
-      alert("Payment checkout session expired after 5 minutes.");
-      router.replace('/app/pos'); // Clear param after alert
-    }
-  }, [searchParams, router]);
-
-  const handleCompleteSale = () => {
-    // Navigate to the dedicated checkout page with the query params
-    const amountStr = total.toFixed(2);
-    
-    // Save current order data to sessionStorage to recover it after checkout redirects back
-    sessionStorage.setItem('pos_cart', JSON.stringify(cart));
-    sessionStorage.setItem('pos_discount', discount.toString());
-    sessionStorage.setItem('pos_customer', customerName);
-    
-    router.push(`/app/checkout?amount=${amountStr}`);
-  };
-
   const startNewSale = () => {
     setCart([]);
     setCustomerName('');
     setDiscount(0);
-    setPaymentMethod('cash');
+    setPaymentMethod('CASH');
     setCashTendered('');
     
     // Clear storage
@@ -150,7 +131,7 @@ export default function POSPage() {
     sessionStorage.removeItem('pos_discount');
     sessionStorage.removeItem('pos_customer');
     
-    router.replace('/app/pos'); // Clear success params
+    router.replace('/app/pos'); 
   };
 
   return (

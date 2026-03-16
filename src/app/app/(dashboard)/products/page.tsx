@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Plus, Edit2, Trash2, MoreHorizontal, Grid3X3, List, Package, Loader2, X, Barcode, IndianRupee, Layers } from 'lucide-react';
 
 export default function ProductsPage() {
+  const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [search, setSearch] = useState('');
@@ -85,14 +88,14 @@ export default function ProductsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-text-primary tracking-tight">Product Catalog</h1>
-          <p className="text-sm text-text-muted mt-0.5">{products.length} items found in your inventory</p>
+          <p className="text-xs text-text-muted mt-0.5 tracking-tight font-medium">{products.length} products found in your inventory</p>
         </div>
-        <button
-          onClick={() => { setEditingProduct(null); setIsModalOpen(true); }}
+        <Link
+          href="/app/products/new"
           className="flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all active:scale-95"
         >
           <Plus className="w-4 h-4" /> Add New Product
-        </button>
+        </Link>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-3">

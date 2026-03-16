@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Store, FileText, Bell, Printer, Globe, Users, Shield, CreditCard, Save, Loader2, CheckCircle2 } from 'lucide-react';
+import { Store, FileText, Bell, Printer, Globe, Users, Shield, CreditCard, Save, Loader2, CheckCircle2, Download, Database } from 'lucide-react';
 
 const settingsSections = [
   { id: 'store', label: 'Store Profile', icon: Store },
@@ -231,32 +231,14 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {activeSection === 'users' && (
+            {activeSection === 'backup' && (
               <div className="bg-white rounded-2xl p-8 border border-border shadow-sm">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-black text-text-primary tracking-tight">User Management</h2>
-                  <button className="px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all">+ Add User</button>
-                </div>
-                <div className="space-y-3">
-                  {[
-                    { name: 'Owner', email: 'owner@example.com', role: 'Owner', status: 'Active' },
-                    { name: 'Cashier 1', email: 'cashier1@example.com', role: 'Cashier', status: 'Active' },
-                    { name: 'Manager', email: 'manager@example.com', role: 'Manager', status: 'Inactive' },
-                  ].map((user, i) => (
-                    <div key={i} className="flex items-center justify-between p-5 bg-page-bg/50 rounded-2xl border border-border/50 hover:border-primary/20 transition-all">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-2xl flex items-center justify-center">
-                          <span className="text-xs font-black text-primary">{user.name.split(' ').map(n => n[0]).join('')}</span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-text-primary">{user.name}</p>
-                          <p className="text-[11px] text-text-muted font-bold">{user.email}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="px-2.5 py-1 bg-primary/10 text-primary rounded-lg text-[10px] font-black uppercase">{user.role}</span>
-                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${user.status === 'Active' ? 'bg-secondary-green/10 text-secondary-green' : 'bg-gray-100 text-text-muted'}`}>{user.status}</span>
-                      </div>
+                <h2 className="text-lg font-black text-text-primary mb-6 tracking-tight">Database Backup & Export</h2>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-page-bg rounded-lg border border-border/50">
+                    <div>
+                      <p className="text-sm font-semibold text-text-primary">System Backup</p>
+                      <p className="text-xs text-text-muted">Generate a full backup of your store data.</p>
                     </div>
                     <button className="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-lg text-sm font-semibold text-text-primary hover:bg-gray-50 transition-all">
                       <Download className="w-4 h-4" /> Download Backup
