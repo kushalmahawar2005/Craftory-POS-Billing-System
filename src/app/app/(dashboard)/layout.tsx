@@ -165,7 +165,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* Nav Items */}
-        <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-hide">
           {visibleNavItems.map((item) => {
             const hasSubItems = item.subItems && item.subItems.length > 0;
             const isSubItemActive = hasSubItems && item.subItems!.some(sub => pathname === sub.href || pathname.startsWith(sub.href + '/'));
@@ -216,6 +216,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <AnimatePresence>
                   {hasSubItems && !collapsed && expandedNav === item.label && (
                     <motion.div
+                      key={item.label}
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
@@ -224,9 +225,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       {item.subItems!.map(sub => {
                         const subActive = pathname === sub.href;
                         return (
-                          <div className="flex items-center justify-between w-full group/sub">
+                          <div key={sub.href} className="flex items-center justify-between w-full group/sub">
                             <Link
-                              key={sub.href}
                               href={sub.href}
                               onClick={() => setMobileOpen(false)}
                               className={`flex-1 pl-11 pr-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between ${

@@ -180,7 +180,7 @@ export default function ReportsPage() {
                   <h3 className="text-sm font-black text-text-primary uppercase tracking-wider mb-5">Sales Performance</h3>
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={overviewData?.chart}>
+                      <AreaChart data={Array.isArray(overviewData?.chart) ? overviewData.chart : []}>
                         <defs>
                           <linearGradient id="repoGrad" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#1A6BDB" stopOpacity={0.2} />
@@ -219,7 +219,7 @@ export default function ReportsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/50">
-                      {gstData.map((row, i) => (
+                      {Array.isArray(gstData) && gstData.map((row, i) => (
                         <tr key={i} className="text-xs hover:bg-page-bg/30 transition-colors">
                           <td className="px-6 py-4 font-bold text-text-primary uppercase">{row.invoiceNumber}</td>
                           <td className="px-6 py-4 text-text-muted">{row.customerName}</td>
@@ -232,7 +232,7 @@ export default function ReportsPage() {
                       ))}
                     </tbody>
                   </table>
-                  {gstData.length === 0 && (
+                  {(!Array.isArray(gstData) || gstData.length === 0) && (
                     <div className="py-20 text-center text-sm text-text-muted font-bold">No data found for selected dates.</div>
                   )}
                 </div>
@@ -276,7 +276,7 @@ export default function ReportsPage() {
                 <h3 className="text-sm font-black text-text-primary uppercase tracking-wider mb-6">Top Categories by Sales</h3>
                 <div className="h-96">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={catPerformance} layout="vertical">
+                    <BarChart data={Array.isArray(catPerformance) ? catPerformance : []} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" horizontal={false} />
                       <XAxis type="number" hide />
                       <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748B', fontWeight: 'bold' }} width={120} />
@@ -286,7 +286,7 @@ export default function ReportsPage() {
                   </ResponsiveContainer>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-6 border-t border-border">
-                  {catPerformance.slice(0, 4).map((cat, i) => (
+                  {Array.isArray(catPerformance) && catPerformance.slice(0, 4).map((cat, i) => (
                     <div key={i} className="text-center">
                       <p className="text-[10px] uppercase font-bold text-text-muted mb-1">{cat.name}</p>
                       <p className="text-sm font-black text-text-primary">₹{cat.sales.toLocaleString()}</p>
