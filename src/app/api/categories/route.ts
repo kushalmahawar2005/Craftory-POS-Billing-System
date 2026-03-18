@@ -45,7 +45,7 @@ export async function GET(req: Request) {
                     where: { shopId: session.shopId },
                     select: { name: true }
                 });
-                const existingNames = new Set(existing.map(e => e.name));
+                const existingNames = new Set(existing.map((e: { name: string }) => e.name));
 
                 for (const catName of matched.categories) {
                     if (!existingNames.has(catName)) {
@@ -150,7 +150,7 @@ export async function POST(req: Request) {
                 where: { shopId: session.shopId },
                 select: { name: true }
             });
-            const existingNames = new Set(existing.map(e => e.name));
+            const existingNames = new Set(existing.map((e: { name: string }) => e.name));
 
             for (const catName of matched.categories) {
                 if (!existingNames.has(catName)) {
