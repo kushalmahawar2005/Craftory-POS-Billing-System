@@ -64,7 +64,7 @@ export async function POST(req: Request) {
 
     try {
         const data = await req.json();
-        const { name, price, costPrice, stockQuantity, categoryId, barcode, imageUrl, supplierId } = data;
+        const { name, price, costPrice, stockQuantity, categoryId, barcode, imageUrl, imagePublicId, supplierId } = data;
 
         if (!name || price === undefined) {
             return NextResponse.json({ error: 'Name and Price are required' }, { status: 400 });
@@ -78,6 +78,7 @@ export async function POST(req: Request) {
                 stockQuantity: parseInt(stockQuantity || '0'),
                 barcode,
                 imageUrl,
+                imagePublicId,
                 categoryId,
                 supplierId,
                 shopId: session.shopId,

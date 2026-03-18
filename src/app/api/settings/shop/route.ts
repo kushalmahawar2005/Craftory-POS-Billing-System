@@ -9,7 +9,10 @@ export async function GET() {
     try {
         const shop = await db.shop.findUnique({
             where: { id: session.shopId },
-            include: { stores: true }
+            include: { 
+                stores: true,
+                preferences: true
+            }
         });
         return NextResponse.json(shop);
     } catch (error) {
@@ -23,12 +26,30 @@ export async function PUT(req: Request) {
 
     try {
         const data = await req.json();
-        const { shopName, ownerName, email, phone } = data;
+        const { name, businessType, address, city, state, pincode, phone, email } = data;
 
         const updated = await db.shop.update({
             where: { id: session.shopId },
-            data: { shopName, ownerName, email, phone }
+            data: { 
+                shopName: name || undefined, 
+                businessType: businessType || undefined,
+                phone: phone || undefined,
+                email: email || undefined
+            }
         });
+
+        // Also update the primary store's address if it exists
+        if (session.storeId) {
+            await db.store.update({
+                where: { id: session.storeId },
+                data: {
+                    address: address || undefined,
+                    city: city || undefined,
+                    state: state || undefined,
+                    pincode: pincode || undefined
+                }
+            });
+        }
 
         return NextResponse.json(updated);
     } catch (error) {

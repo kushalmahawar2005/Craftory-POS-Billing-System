@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Download, Eye, Printer, FileText, Loader2, IndianRupee, Calendar, MessageCircle } from 'lucide-react';
+import { Search, Download, Eye, Printer, FileText, Loader2, IndianRupee, Calendar, MessageCircle, X, Package } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function InvoicesPage() {
@@ -10,6 +10,12 @@ export default function InvoicesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSale, setSelectedSale] = useState<any>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnItems, setReturnItems] = useState<any[]>([]);
+  const [returnReason, setReturnReason] = useState('DAMAGED');
+  const [returnNotes, setReturnNotes] = useState('');
+  const [refundMethod, setRefundMethod] = useState('CASH');
+  const [isProcessingReturn, setIsProcessingReturn] = useState(false);
 
   const downloadPdf = async (saleId: string, invoiceNumber: string) => {
     setDownloadingId(saleId);
@@ -108,6 +114,79 @@ export default function InvoicesPage() {
     fetchSales();
   }, []);
 
+  const handleExportCSV = () => {
+    if (sales.length === 0) return alert('No data to export');
+    const headers = ['Invoice Number', 'Date', 'Customer', 'Items', 'Total Amount', 'Payment Method'];
+    const rows = sales.map(s => [
+      s.invoiceNumber,
+      new Date(s.createdAt).toLocaleString(),
+      s.customer?.name || 'Walk-in',
+      s.items?.length || 0,
+      s.total,
+      s.paymentMethod
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sales_export_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleOpenReturn = (sale: any) => {
+    setSelectedSale(sale);
+    setReturnItems(sale.items.map((item: any) => ({
+      productId: item.productId,
+      name: item.product?.name || 'Item',
+      originalQty: item.quantity,
+      returnQty: 0,
+      price: item.price,
+      restock: true,
+      selected: false
+    })));
+    setShowReturnModal(true);
+  };
+
+  const handleProcessReturn = async () => {
+    const selectedItems = returnItems.filter(i => i.selected && i.returnQty > 0);
+    if (selectedItems.length === 0) return alert('Select items to return');
+
+    setIsProcessingReturn(true);
+    try {
+      const res = await fetch(`/api/sales/${selectedSale.id}/return`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: selectedItems.map(i => ({
+            productId: i.productId,
+            quantity: i.returnQty,
+            restockItem: i.restock
+          })),
+          reason: returnReason,
+          notes: returnNotes,
+          refundMethod,
+          refundAmount: selectedItems.reduce((acc, cur) => acc + (cur.returnQty * cur.price), 0)
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Return processed: ${data.return.returnNumber}`);
+        setShowReturnModal(false);
+        fetchSales();
+      } else {
+        alert(data.error || 'Return failed');
+      }
+    } catch (e) {
+      alert('Internal error');
+    } finally {
+      setIsProcessingReturn(false);
+    }
+  };
+
   const filtered = sales.filter(inv =>
     inv.invoiceNumber.toLowerCase().includes(search.toLowerCase()) ||
     inv.customer?.name?.toLowerCase().includes(search.toLowerCase())
@@ -121,7 +200,10 @@ export default function InvoicesPage() {
           <p className="text-sm text-text-muted mt-0.5">{sales.length} transactions recorded total</p>
         </div>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-border rounded-xl text-xs font-bold text-text-muted hover:border-primary hover:text-primary transition-all shadow-sm">
+          <button 
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-border rounded-xl text-xs font-bold text-text-muted hover:border-primary hover:text-primary transition-all shadow-sm"
+          >
             <Download className="w-4 h-4" /> Export CSV
           </button>
         </div>
@@ -264,9 +346,18 @@ export default function InvoicesPage() {
                   <div className="space-y-2">
                     {selectedSale.items?.map((item: any, i: number) => (
                       <div key={i} className="flex justify-between items-center p-3 bg-page-bg/30 rounded-xl border border-border/30">
-                        <div>
-                          <p className="text-xs font-black text-text-primary">{item.product?.name || 'Unnamed Product'}</p>
-                          <p className="text-[10px] text-text-muted font-bold font-mono">CODE: {item.product?.barcode || 'N/A'}</p>
+                        <div className="flex gap-3 items-center">
+                          <div className="w-10 h-10 bg-primary/5 rounded-lg border border-primary/10 overflow-hidden flex items-center justify-center shrink-0">
+                             {item.product?.imageUrl ? (
+                                <img src={item.product?.imageUrl} alt={item.product?.name} className="w-full h-full object-cover" />
+                             ) : (
+                                <Package className="w-4 h-4 text-primary opacity-50" />
+                             )}
+                          </div>
+                          <div>
+                            <p className="text-xs font-black text-text-primary">{item.product?.name || 'Unnamed Product'}</p>
+                            <p className="text-[10px] text-text-muted font-bold font-mono">CODE: {item.product?.barcode || 'N/A'}</p>
+                          </div>
                         </div>
                         <div className="flex gap-12 text-xs font-black text-text-primary">
                           <span className="w-8 text-center">{item.quantity}</span>
@@ -300,6 +391,11 @@ export default function InvoicesPage() {
                       {downloadingId === selectedSale.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                       {downloadingId === selectedSale.id ? 'Generating...' : 'Download PDF'}
                     </button>
+                    {selectedSale.status !== 'RETURNED' && (Date.now() - new Date(selectedSale.createdAt).getTime()) < 30 * 24 * 60 * 60 * 1000 && (
+                      <button onClick={() => handleOpenReturn(selectedSale)} className="flex-1 py-3 bg-orange-600 text-white font-black rounded-2xl hover:bg-orange-700 shadow-xl shadow-orange-600/20 transition-all">
+                        Return Items
+                      </button>
+                    )}
                     <button onClick={() => setSelectedSale(null)} className="flex-1 py-3 bg-page-bg text-text-primary font-bold rounded-2xl border border-border transition-all">
                       Close
                     </button>
@@ -314,6 +410,114 @@ export default function InvoicesPage() {
                       <Printer className="w-4 h-4" /> Thermal Print
                     </button>
                   </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Return Processing Modal */}
+      <AnimatePresence>
+        {showReturnModal && selectedSale && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowReturnModal(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden overflow-y-auto max-h-[90vh]">
+              <div className="p-6 border-b border-border flex items-center justify-between bg-orange-50/50">
+                <h2 className="text-lg font-black text-orange-700 uppercase tracking-tight">Process Return: {selectedSale.invoiceNumber}</h2>
+                <button onClick={() => setShowReturnModal(false)} className="p-2 hover:bg-orange-100 rounded-full transition-colors"><X className="w-5 h-5 text-orange-700" /></button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-2 px-2">Select</th>
+                        <th className="text-left py-2 px-2">Product</th>
+                        <th className="text-center py-2 px-2">Original Qty</th>
+                        <th className="text-center py-2 px-2">Return Qty</th>
+                        <th className="text-right py-2 px-2">Price</th>
+                        <th className="text-center py-2 px-2">Restock</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/50">
+                      {returnItems.map((item, idx) => (
+                        <tr key={idx} className={item.selected ? 'bg-orange-50/30' : ''}>
+                          <td className="py-3 px-2">
+                            <input type="checkbox" checked={item.selected} onChange={e => {
+                                const newItems = [...returnItems];
+                                newItems[idx].selected = e.target.checked;
+                                if (e.target.checked && newItems[idx].returnQty === 0) newItems[idx].returnQty = 1;
+                                setReturnItems(newItems);
+                            }} className="w-4 h-4 accent-orange-600 cursor-pointer" />
+                          </td>
+                          <td className="py-3 px-2 font-bold">{item.name}</td>
+                          <td className="py-3 px-2 text-center">{item.originalQty}</td>
+                          <td className="py-3 px-2 text-center">
+                            <input type="number" min={0} max={item.originalQty} value={item.returnQty} 
+                              onChange={e => {
+                                const newItems = [...returnItems];
+                                newItems[idx].returnQty = Math.min(item.originalQty, Math.max(0, parseInt(e.target.value) || 0));
+                                setReturnItems(newItems);
+                              }}
+                              className="w-16 px-2 py-1 border border-border rounded text-center focus:ring-1 focus:ring-orange-500 focus:outline-none" 
+                            />
+                          </td>
+                          <td className="py-3 px-2 text-right">₹{item.price}</td>
+                          <td className="py-3 px-2 text-center">
+                            <input type="checkbox" checked={item.restock} onChange={e => {
+                                const newItems = [...returnItems];
+                                newItems[idx].restock = e.target.checked;
+                                setReturnItems(newItems);
+                            }} className="w-4 h-4 accent-orange-600 cursor-pointer" />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-text-muted uppercase mb-1.5">Return Reason</label>
+                    <select value={returnReason} onChange={e => setReturnReason(e.target.value)} className="w-full p-3 bg-page-bg/50 border border-border rounded-xl text-xs font-bold outline-none focus:border-orange-500 appearance-none">
+                      <option value="DAMAGED">Damaged Product</option>
+                      <option value="WRONG_ITEM">Wrong Item Delivered</option>
+                      <option value="CUSTOMER_REQUEST">Customer Request</option>
+                      <option value="EXPIRED">Expired Product</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-text-muted uppercase mb-1.5">Refund Method</label>
+                    <select value={refundMethod} onChange={e => setRefundMethod(e.target.value)} className="w-full p-3 bg-page-bg/50 border border-border rounded-xl text-xs font-bold outline-none focus:border-orange-500 appearance-none">
+                      <option value="CASH">Cash</option>
+                      <option value="UPI">UPI</option>
+                      <option value="CARD">Card</option>
+                      <option value="STORE_CREDIT">Store Credit</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-text-muted uppercase mb-1.5">Notes (Optional)</label>
+                  <textarea value={returnNotes} onChange={e => setReturnNotes(e.target.value)} className="w-full p-3 bg-page-bg/50 border border-border rounded-xl text-xs font-bold h-20 outline-none focus:border-orange-500 resize-none" placeholder="Add some details about the return..."></textarea>
+                </div>
+
+                <div className="flex justify-between items-center p-5 bg-orange-50 rounded-2xl border border-orange-200">
+                  <div>
+                    <p className="text-[10px] text-orange-700 font-black uppercase tracking-wider mb-1">Estimated Refund</p>
+                    <p className="text-3xl font-black text-orange-700">₹{returnItems.filter(i => i.selected).reduce((acc, cur) => acc + (cur.returnQty * cur.price), 0).toFixed(2)}</p>
+                  </div>
+                  <button
+                    onClick={handleProcessReturn}
+                    disabled={isProcessingReturn || returnItems.filter(i => i.selected && i.returnQty > 0).length === 0}
+                    className="px-10 py-4 bg-orange-600 text-white font-black rounded-2xl hover:bg-orange-700 shadow-xl shadow-orange-600/30 disabled:opacity-50 flex items-center gap-2 transform active:scale-95 transition-all"
+                  >
+                    {isProcessingReturn ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm Return'}
+                  </button>
                 </div>
               </div>
             </motion.div>

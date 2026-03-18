@@ -124,9 +124,19 @@ export default function CategoriesPage() {
       setLoading(true);
       const res = await fetch(`/api/categories${seed ? '?seed=true' : ''}`);
       const data = await res.json();
-      setCategories(data);
+      
+      if (Array.isArray(data)) {
+        setCategories(data);
+      } else {
+        console.error('API returned non-array data:', data);
+        setCategories([]);
+        if (data.error) {
+          alert('Error loading categories: ' + data.error);
+        }
+      }
     } catch (error) {
       console.error('Failed to fetch categories:', error);
+      setCategories([]);
     } finally {
       setLoading(false);
       setSeeding(false);

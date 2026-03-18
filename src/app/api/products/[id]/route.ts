@@ -36,7 +36,7 @@ export async function PUT(
 
     try {
         const data = await req.json();
-        const { name, price, costPrice, stockQuantity, categoryId, barcode, imageUrl, supplierId } = data;
+        const { name, price, costPrice, stockQuantity, categoryId, barcode, imageUrl, imagePublicId, supplierId } = data;
 
         // Check ownership
         const existing = await db.product.findUnique({
@@ -53,6 +53,7 @@ export async function PUT(
                 stockQuantity: stockQuantity !== undefined ? parseInt(stockQuantity) : undefined,
                 barcode,
                 imageUrl,
+                imagePublicId,
                 categoryId,
                 supplierId,
             }
@@ -87,8 +88,25 @@ export async function DELETE(
     const { id } = await params;
 
     try {
-        await db.product.delete({
+        const product = await db.product.findUnique({
             where: { id, shopId: session.shopId }
+        });
+
+        if (!product) return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+
+        // Delete image from Cloudinary if exists
+        if (product.imagePublicId) {
+            try {
+                const { deleteImage } = await import('@/lib/cloudinary');
+                await deleteImage(product.imagePublicId);
+            } catch (imgError) {
+                console.error('Failed to delete image from Cloudinary:', imgError);
+                // Continue with product deletion even if image deletion fails
+            }
+        }
+
+        await db.product.delete({
+            where: { id }
         });
         return NextResponse.json({ message: 'Product deleted' });
     } catch (error) {
