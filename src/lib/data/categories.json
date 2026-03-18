@@ -1,174 +1,208 @@
-[
-  {
-    "name": "Grocery & Food Staples",
-    "icon": "ShoppingCart",
-    "color": "#4ade80",
-    "children": [
-      {
-        "name": "Grains & Pulses",
-        "children": [
-          { "name": "Rice" },
-          { "name": "Wheat & Atta" },
-          { "name": "Pulses & Lentils" },
-          { "name": "Flour Products" }
-        ]
-      },
-      {
-        "name": "Oils & Spices",
-        "children": [
-          { "name": "Cooking Oils" },
-          { "name": "Spices & Masala" },
-          { "name": "Salt & Sugar" }
-        ]
-      },
-      { 
-        "name": "Dry Fruits & Nuts",
-        "children": [
-          { "name": "Almonds" },
-          { "name": "Cashews" }
-        ]
-      },
-      { "name": "Ready To Eat/Cook" },
-      { "name": "Breakfast Foods" },
-      { "name": "Beverages" }
-    ]
-  },
-  {
-    "name": "Beverages",
-    "icon": "Coffee",
-    "color": "#60a5fa",
-    "children": [
-      {
-        "name": "Soft Drinks & Juices",
-        "children": [
-          { "name": "Soft Drinks" },
-          { "name": "Fruit Juices" },
-          { "name": "Energy Drinks" }
-        ]
-      },
-      {
-        "name": "Tea & Coffee",
-        "children": [
-          { "name": "Tea" },
-          { "name": "Coffee" },
-          { "name": "Milk Beverages" }
-        ]
-      },
-      { "name": "Packaged Water" },
-      { "name": "Soda" },
-      { "name": "Alcoholic Beverages" }
-    ]
-  },
-  {
-    "name": "Jewelry & Accessories",
-    "icon": "Gem",
-    "color": "#fbbf24",
-    "children": [
-      {
-        "name": "Gold Jewelry",
-        "children": [
-          { "name": "Rings" },
-          { "name": "Necklaces" },
-          { "name": "Chains" },
-          { "name": "Earrings" },
-          { "name": "Bangles" }
-        ]
-      },
-      {
-        "name": "Silver Jewelry",
-        "children": [
-          { "name": "Anklets" },
-          { "name": "Rings" },
-          { "name": "Bracelets" }
-        ]
-      },
-      { "name": "Diamond Jewelry" },
-      { "name": "Fashion Accessories" },
-      { "name": "Watches" },
-      { "name": "Sunglasses" }
-    ]
-  },
-  {
-    "name": "Electronics & Gadgets",
-    "icon": "Smartphone",
-    "color": "#06b6d4",
-    "children": [
-      {
-        "name": "Mobiles & Accessories",
-        "children": [
-          { "name": "Smartphones" },
-          { "name": "Chargers" },
-          { "name": "Power Banks" },
-          { "name": "Cases & Covers" }
-        ]
-      },
-      {
-        "name": "Computing",
-        "children": [
-          { "name": "Laptops" },
-          { "name": "Desktop PC" },
-          { "name": "Monitors" },
-          { "name": "Storage Devices" }
-        ]
-      },
-      { "name": "Audio" },
-      { "name": "Smart Devices" }
-    ]
-  },
-  {
-    "name": "Clothing & Apparel",
-    "icon": "Shirt",
-    "color": "#d946ef",
-    "children": [
-      {
-        "name": "Men",
-        "children": [
-          { "name": "Topwear" },
-          { "name": "Bottomwear" },
-          { "name": "Footwear" }
-        ]
-      },
-      {
-        "name": "Women",
-        "children": [
-          { "name": "Ethnic Wear" },
-          { "name": "Western Wear" },
-          { "name": "Footwear" }
-        ]
-      },
-      { "name": "Kids" }
-    ]
-  },
-  {
-    "name": "Fruits & Vegetables",
-    "icon": "Apple",
-    "color": "#22c55e",
-    "children": [
-      { "name": "Fresh Fruits" },
-      { "name": "Fresh Vegetables" },
-      { "name": "Exotic Fruits" },
-      { "name": "Organic Vegetables" }
-    ]
-  },
-  {
-    "name": "Personal Care & Beauty",
-    "icon": "User",
-    "color": "#f472b6",
-    "children": [
-      { "name": "Skin Care" },
-      { "name": "Hair Care" },
-      { "name": "Oral Care" },
-      { "name": "Makeup" }
-    ]
-  },
-  {
-    "name": "Household & Cleaning",
-    "icon": "Sparkles",
-    "color": "#38bdf8",
-    "children": [
-      { "name": "Detergents" },
-      { "name": "Cleaners" },
-      { "name": "Tools" }
-    ]
-  }
-]
+{
+  "businessTypes": [
+    {
+      "type": "Kirana Store",
+      "icon": "🏪",
+      "categories": [
+        "Grocery & Food Staples",
+        "Beverages",
+        "Snacks & Packaged Foods",
+        "Dairy Products",
+        "Household & Cleaning",
+        "Personal Care & Beauty"
+      ]
+    },
+    {
+      "type": "Supermarket",
+      "icon": "🛒",
+      "categories": [
+        "Grocery & Food Staples",
+        "Beverages",
+        "Snacks & Packaged Foods",
+        "Dairy Products",
+        "Fruits & Vegetables",
+        "Personal Care & Beauty",
+        "Household & Cleaning",
+        "Baby Care",
+        "Clothing & Apparel",
+        "Home Essentials",
+        "Stationery"
+      ]
+    },
+    {
+      "type": "Pharmacy & Medical Store",
+      "icon": "💊",
+      "categories": [
+        "Medicines & Healthcare",
+        "Medical Equipment",
+        "Personal Care & Beauty",
+        "Baby Care",
+        "Wellness & Nutrition"
+      ]
+    },
+    {
+      "type": "Restaurant & Cafe",
+      "icon": "🍽️",
+      "categories": [
+        "Prepared Meals",
+        "Beverages",
+        "Desserts & Bakes",
+        "Cuisines"
+      ]
+    },
+    {
+      "type": "Bakery & Sweet Shop",
+      "icon": "🍰",
+      "categories": [
+        "Sweets & Mithai",
+        "Cakes & Pastries",
+        "Bakery Items",
+        "Dairy Products",
+        "Snacks",
+        "Beverages"
+      ]
+    },
+    {
+      "type": "Electronics Store",
+      "icon": "📱",
+      "categories": [
+        "Mobile Phones",
+        "Home Appliances",
+        "Television & Audio",
+        "Personal Gadgets"
+      ]
+    },
+    {
+      "type": "Computer & IT Shop",
+      "icon": "💻",
+      "categories": [
+        "Laptops & Desktops",
+        "Computer Peripherals",
+        "Networking Components",
+        "Software & Storage"
+      ]
+    },
+    {
+      "type": "Clothing & Fashion Store",
+      "icon": "👕",
+      "categories": [
+        "Men's Wear",
+        "Women's Wear",
+        "Kids' Wear",
+        "Footwear",
+        "Fashion Accessories"
+      ]
+    },
+    {
+      "type": "Jewelry Store",
+      "icon": "💍",
+      "categories": [
+        "Gold Jewelry",
+        "Silver Jewelry",
+        "Diamond & Precious Stones",
+        "Fashion & Imitation Jewelry"
+      ]
+    },
+    {
+      "type": "Furniture & Home Decor",
+      "icon": "🛋️",
+      "categories": [
+        "Home Furniture",
+        "Office Furniture",
+        "Home Decor & Lighting",
+        "Furnishings & Carpets"
+      ]
+    },
+    {
+      "type": "Hardware & Building Materials",
+      "icon": "🔧",
+      "categories": [
+        "Construction Materials",
+        "Hardware & Tools",
+        "Paints & Adhesives",
+        "Plumbing Supplies"
+      ]
+    },
+    {
+      "type": "Electrical Store",
+      "icon": "⚡",
+      "categories": [
+        "Wires & Cables",
+        "Switches & Sockets",
+        "Lighting & Fans",
+        "Industrial Electricals"
+      ]
+    },
+    {
+      "type": "Stationery & Book Store",
+      "icon": "📚",
+      "categories": [
+        "School & Office Stationery",
+        "Books & Novels",
+        "Art & Craft Supplies",
+        "Educational Materials"
+      ]
+    },
+    {
+      "type": "Sports & Fitness Store",
+      "icon": "🏋️",
+      "categories": [
+        "Sports Equipment",
+        "Gym & Fitness Gear",
+        "Sports Apparel",
+        "Health Supplements"
+      ]
+    },
+    {
+      "type": "Automotive & Spare Parts",
+      "icon": "🚗",
+      "categories": [
+        "Vehicle Spare Parts",
+        "Tyres & Tubes",
+        "Engine Oils & Lubricants",
+        "Car & Bike Accessories"
+      ]
+    },
+    {
+      "type": "Agriculture & Farming Supply",
+      "icon": "🌾",
+      "categories": [
+        "Seeds & Fertilizers",
+        "Pesticides",
+        "Farming Tools & Machinery",
+        "Irrigation Equipment"
+      ]
+    },
+    {
+      "type": "Pet Store",
+      "icon": "🐾",
+      "categories": [
+        "Pet Food",
+        "Pet Toys & Accessories",
+        "Pet Grooming",
+        "Pet Healthcare"
+      ]
+    },
+    {
+      "type": "Baby & Kids Store",
+      "icon": "👶",
+      "categories": [
+        "Baby Gear & Toys",
+        "Kids' Fashion",
+        "Diapering & Skin Care",
+        "Baby Food & Nutrition"
+      ]
+    },
+    {
+      "type": "General Store",
+      "icon": "📦",
+      "categories": [
+        "Grocery",
+        "Personal Care",
+        "Household",
+        "Electronics",
+        "Others"
+      ]
+    }
+  ]
+}

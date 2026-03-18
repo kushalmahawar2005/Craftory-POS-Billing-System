@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Plus, Edit2, Trash2, MoreHorizontal, Grid3X3, List, Package, Loader2, X, Barcode, IndianRupee, Layers } from 'lucide-react';
+import ImageUpload from '@/components/ui/ImageUpload';
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -26,7 +27,9 @@ export default function ProductsPage() {
     costPrice: 0,
     stockQuantity: 0,
     gstRate: 0,
-    unit: 'PCS'
+    unit: 'PCS',
+    imageUrl: '',
+    imagePublicId: ''
   });
 
   const fetchProducts = async () => {
@@ -75,7 +78,7 @@ export default function ProductsPage() {
       if (res.ok) {
         setIsModalOpen(false);
         setEditingProduct(null);
-        setFormData({ name: '', barcode: '', categoryId: '', price: 0, mrp: 0, costPrice: 0, stockQuantity: 0, gstRate: 0, unit: 'PCS' });
+        setFormData({ name: '', barcode: '', categoryId: '', price: 0, mrp: 0, costPrice: 0, stockQuantity: 0, gstRate: 0, unit: 'PCS', imageUrl: '', imagePublicId: '' });
         fetchProducts();
       }
     } catch (e) {
@@ -135,8 +138,12 @@ export default function ProductsPage() {
                   <tr key={product.id} className="hover:bg-page-bg/40 transition-colors group">
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center shrink-0">
-                          <Package className="w-5 h-5 text-primary" />
+                        <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center shrink-0 border border-primary/10 overflow-hidden">
+                          {product.imageUrl ? (
+                            <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <Package className="w-5 h-5 text-primary opacity-50" />
+                          )}
                         </div>
                         <div className="min-w-0">
                           <p className="font-bold text-text-primary truncate">{product.name}</p>
@@ -176,12 +183,16 @@ export default function ProductsPage() {
           {products.map((product) => (
             <motion.div key={product.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
               className="bg-white rounded-2xl p-5 border border-border hover:shadow-xl hover:shadow-primary/5 transition-all group relative">
-              <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                 <button onClick={() => { setEditingProduct(product); setFormData(product); setIsModalOpen(true); }} className="p-1.5 bg-white shadow-sm border border-border rounded-lg text-primary hover:bg-primary-light"><Edit2 className="w-3 h-3" /></button>
                 <button onClick={() => handleDelete(product.id)} className="p-1.5 bg-white shadow-sm border border-border rounded-lg text-error hover:bg-error/5"><Trash2 className="w-3 h-3" /></button>
               </div>
-              <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
-                <Package className="w-6 h-6 text-primary" />
+              <div className="w-full h-32 bg-primary/5 rounded-2xl flex items-center justify-center mb-4 overflow-hidden border border-primary/5">
+                {product.imageUrl ? (
+                   <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                ) : (
+                   <Package className="w-8 h-8 text-primary opacity-30" />
+                )}
               </div>
               <h3 className="text-sm font-bold text-text-primary line-clamp-1">{product.name}</h3>
               <p className="text-[10px] text-text-muted mt-1 uppercase font-black">{product.category?.name || 'General'}</p>
@@ -253,6 +264,14 @@ export default function ProductsPage() {
                     <label className="text-xs font-black text-text-muted uppercase">GST Rate (%)</label>
                     <input type="number" value={formData.gstRate} onChange={e => setFormData({ ...formData, gstRate: Number(e.target.value) })}
                       className="w-full px-4 py-3 bg-page-bg border-none rounded-2xl text-sm focus:ring-2 focus:ring-primary shadow-inner" />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-black text-text-muted uppercase">Product Image</label>
+                    <ImageUpload 
+                      currentImage={formData.imageUrl}
+                      onUpload={(url, publicId) => setFormData({ ...formData, imageUrl: url, imagePublicId: publicId })}
+                      onDelete={() => setFormData({ ...formData, imageUrl: '', imagePublicId: '' })}
+                    />
                   </div>
                 </div>
                 <div className="flex gap-3 pt-4">

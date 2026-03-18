@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { 
   X, HelpCircle, ChevronDown, Plus, Upload
 } from 'lucide-react';
+import ImageUpload from '@/components/ui/ImageUpload';
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -13,6 +14,9 @@ export default function NewProductPage() {
   const [returnable, setReturnable] = useState('Yes');
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const [imageUrl, setImageUrl] = useState('');
+  const [imagePublicId, setImagePublicId] = useState('');
 
   // Fetch categories on mount
   useEffect(() => {
@@ -117,35 +121,22 @@ export default function NewProductPage() {
 
             {/* Right Column: Media */}
             <div className="lg:col-span-4">
-               <div className="bg-white border border-gray-100 rounded-lg p-5 space-y-6 shadow-sm">
-                  <div className="grid grid-cols-2 gap-4">
-                     <div>
-                        <span className="text-[11px] font-bold text-gray-500 uppercase block mb-2">Front View</span>
-                        <div className="aspect-square bg-white border border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-blue-400 transition-all">
-                           <Upload className="w-4 h-4 text-blue-500" />
-                           <span className="text-[10px] text-gray-400 font-bold">Upload Front Image</span>
-                        </div>
-                     </div>
-                     <div>
-                        <span className="text-[11px] font-bold text-gray-500 uppercase block mb-2">Rear View</span>
-                        <div className="aspect-square bg-white border border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-blue-400 transition-all">
-                           <Upload className="w-4 h-4 text-blue-500" />
-                           <span className="text-[10px] text-gray-400 font-bold">Upload Rear Image</span>
-                        </div>
-                     </div>
-                  </div>
-                  <div>
-                     <span className="text-[11px] font-bold text-gray-500 uppercase block mb-2">Other Images</span>
-                     <div className="w-full bg-white border border-dashed border-gray-200 rounded-lg py-10 flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-400 transition-all">
-                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white mb-3">
-                           <Upload className="w-5 h-5" />
-                        </div>
-                        <span className="text-xs font-bold text-gray-700">Drag & Drop Images</span>
-                        <p className="text-[10px] text-gray-400 mt-2 px-4 leading-relaxed">
-                           You can add up to 15 images including front, rear and other images, each not exceeding 5 MB.
-                        </p>
-                     </div>
-                  </div>
+               <div className="bg-white border border-gray-100 rounded-lg p-5 space-y-4 shadow-sm">
+                  <span className="text-[11px] font-bold text-gray-500 uppercase block mb-2">Product Image</span>
+                  <ImageUpload 
+                     currentImage={imageUrl}
+                     onUpload={(url, publicId) => {
+                        setImageUrl(url);
+                        setImagePublicId(publicId);
+                     }}
+                     onDelete={() => {
+                        setImageUrl('');
+                        setImagePublicId('');
+                     }}
+                  />
+                  <p className="text-[10px] text-gray-400 mt-2 text-center leading-relaxed">
+                     Upload a high-quality product image (max 5 MB).
+                  </p>
                </div>
             </div>
           </div>

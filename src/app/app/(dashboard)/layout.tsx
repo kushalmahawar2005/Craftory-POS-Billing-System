@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingCart, Package, BarChart3, Users, Settings,
-  ChevronLeft, ChevronRight, Bell, Search, LogOut, Menu, X, Store, FileText, Truck, UserCog, ChevronDown, Plus, Shield, ClipboardList
+  ChevronLeft, ChevronRight, Bell, Search, LogOut, Menu, X, Store, FileText, Truck, UserCog, ChevronDown, Plus, Shield, ClipboardList, RotateCcw, HandCoins
 } from 'lucide-react';
 
 type NavItem = {
@@ -36,6 +36,8 @@ const navItems: NavItem[] = [
   { label: 'Suppliers', icon: Truck, href: '/app/suppliers', roles: ['ADMIN', 'MANAGER'] },
   { label: 'Purchase Orders', icon: ClipboardList, href: '/app/purchase-orders', roles: ['ADMIN', 'MANAGER'] },
   { label: 'Invoices', icon: FileText, href: '/app/invoices' },
+  { label: 'Returns', icon: RotateCcw, href: '/app/returns', roles: ['ADMIN', 'MANAGER'] },
+  { label: 'Credit Book', icon: HandCoins, href: '/app/credit-book', roles: ['ADMIN', 'MANAGER'] },
   { label: 'Settings', icon: Settings, href: '/app/settings', roles: ['ADMIN'] },
 ];
 
@@ -45,6 +47,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expandedNav, setExpandedNav] = useState<string>('Inventory');
   const [user, setUser] = useState<any>(null);
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<{ products: any[], invoices: any[] }>({ products: [], invoices: [] });
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -63,6 +69,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         window.location.href = '/login';
       });
   }, []);
+
+  useEffect(() => {
+    if (globalSearch.length < 2) {
+      setSearchResults({ products: [], invoices: [] });
+      setShowResults(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const [pRes, iRes] = await Promise.all([
+          fetch(`/api/products?q=${globalSearch}&limit=5`).then(r => r.json()),
+          fetch(`/api/sales?q=${globalSearch}&limit=5`).then(r => r.json())
+        ]);
+        setSearchResults({
+          products: pRes.products || [],
+          invoices: iRes.sales || []
+        });
+        setShowResults(true);
+      } catch (e) {
+        console.error('Search error', e);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [globalSearch]);
 
   const handleLogout = async () => {
     try {
@@ -130,7 +165,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* Nav Items */}
-        <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-hide">
           {visibleNavItems.map((item) => {
             const hasSubItems = item.subItems && item.subItems.length > 0;
             const isSubItemActive = hasSubItems && item.subItems!.some(sub => pathname === sub.href || pathname.startsWith(sub.href + '/'));
@@ -181,6 +216,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <AnimatePresence>
                   {hasSubItems && !collapsed && expandedNav === item.label && (
                     <motion.div
+                      key={item.label}
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
@@ -189,9 +225,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       {item.subItems!.map(sub => {
                         const subActive = pathname === sub.href;
                         return (
-                          <div className="flex items-center justify-between w-full group/sub">
+                          <div key={sub.href} className="flex items-center justify-between w-full group/sub">
                             <Link
-                              key={sub.href}
                               href={sub.href}
                               onClick={() => setMobileOpen(false)}
                               className={`flex-1 pl-11 pr-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between ${
@@ -253,9 +288,84 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100">
                 {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
-              <div className="hidden sm:flex items-center gap-2 bg-page-bg rounded-lg px-3 py-2 w-72">
-                <Search className="w-4 h-4 text-text-muted" />
-                <input type="text" placeholder="Search products, invoices..." className="bg-transparent text-sm outline-none w-full placeholder:text-text-muted" />
+              <div className="hidden sm:flex items-center gap-2 bg-page-bg rounded-lg px-3 py-2 w-72 relative">
+                <Search className={`w-4 h-4 ${isSearching ? 'text-primary animate-pulse' : 'text-text-muted'}`} />
+                <input
+                  type="text"
+                  value={globalSearch}
+                  onChange={(e) => setGlobalSearch(e.target.value)}
+                  onFocus={() => globalSearch.length >= 2 && setShowResults(true)}
+                  placeholder="Search products, invoices..."
+                  className="bg-transparent text-sm outline-none w-full placeholder:text-text-muted"
+                />
+
+                {/* Search Results Dropdown */}
+                <AnimatePresence>
+                  {showResults && (globalSearch.length >= 2) && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setShowResults(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-border shadow-2xl z-20 overflow-hidden max-h-[400px] overflow-y-auto"
+                      >
+                        {/* Products */}
+                        {searchResults.products.length > 0 && (
+                          <div className="p-2 border-b border-border">
+                            <p className="px-3 py-1.5 text-[10px] font-black text-text-muted uppercase tracking-widest">Products</p>
+                            {searchResults.products.map(p => (
+                              <Link
+                                key={p.id}
+                                href="/app/products"
+                                onClick={() => { setGlobalSearch(''); setShowResults(false); }}
+                                className="flex items-center gap-3 p-2 hover:bg-page-bg rounded-lg transition-colors group"
+                              >
+                                <div className="w-8 h-8 bg-primary/5 rounded flex items-center justify-center">
+                                  <Package className="w-4 h-4 text-primary" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-bold text-text-primary truncate">{p.name}</p>
+                                  <p className="text-[10px] text-text-muted">₹{p.price.toFixed(2)} · Stock: {p.stockQuantity}</p>
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Invoices */}
+                        {searchResults.invoices.length > 0 && (
+                          <div className="p-2">
+                            <p className="px-3 py-1.5 text-[10px] font-black text-text-muted uppercase tracking-widest">Invoices</p>
+                            {searchResults.invoices.map(inv => (
+                              <Link
+                                key={inv.id}
+                                href="/app/invoices"
+                                onClick={() => { setGlobalSearch(''); setShowResults(false); }}
+                                className="flex items-center gap-3 p-2 hover:bg-page-bg rounded-lg transition-colors group"
+                              >
+                                <div className="w-8 h-8 bg-analytics-purple/5 rounded flex items-center justify-center">
+                                  <FileText className="w-4 h-4 text-analytics-purple" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-bold text-text-primary truncate uppercase">{inv.invoiceNumber}</p>
+                                  <p className="text-[10px] text-text-muted">{inv.customer?.name || 'Walk-in'} · ₹{inv.total.toFixed(2)}</p>
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+
+                        {searchResults.products.length === 0 && searchResults.invoices.length === 0 && !isSearching && (
+                          <div className="p-8 text-center">
+                            <Search className="w-8 h-8 text-text-muted/20 mx-auto mb-2" />
+                            <p className="text-xs text-text-muted font-medium">No results found for "{globalSearch}"</p>
+                          </div>
+                        )}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
             <div className="flex items-center gap-3">

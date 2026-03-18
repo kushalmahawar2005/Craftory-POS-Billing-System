@@ -11,6 +11,8 @@ interface Customer {
   phone: string;
   email: string | null;
   totalSpent: number;
+  currentBalance: number;
+  creditLimit: number;
   createdAt: string;
   _count: { sales: number };
   sales: { createdAt: string }[];
@@ -40,9 +42,10 @@ export default function CustomersPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
   const [formError, setFormError] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [creditData, setCreditData] = useState<any>(null);
+  const [loadingCredit, setLoadingCredit] = useState(false);
 
   const fetchCustomers = async () => {
     setIsLoading(true);
@@ -65,14 +68,14 @@ export default function CustomersPage() {
 
   const openAddModal = () => {
     setEditingCustomer(null);
-    setFormData({ name: '', phone: '', email: '' });
+    setFormData({ name: '', phone: '', email: '', creditLimit: '0' });
     setFormError('');
     setShowModal(true);
   };
 
   const openEditModal = (customer: Customer) => {
     setEditingCustomer(customer);
-    setFormData({ name: customer.name, phone: customer.phone, email: customer.email || '' });
+    setFormData({ name: customer.name, phone: customer.phone, email: customer.email || '', creditLimit: customer.creditLimit.toString() });
     setFormError('');
     setShowModal(true);
   };
@@ -97,6 +100,7 @@ export default function CustomersPage() {
           name: formData.name.trim(),
           phone: formData.phone.trim(),
           email: formData.email.trim() || undefined,
+          creditLimit: formData.creditLimit ? parseFloat(formData.creditLimit) : 0,
         }),
       });
 
@@ -117,6 +121,8 @@ export default function CustomersPage() {
     }
   };
 
+  const [formData, setFormData] = useState({ name: '', phone: '', email: '', creditLimit: '0' });
+
   const handleDelete = async () => {
     if (!deleteId) return;
     setDeleting(true);
@@ -135,7 +141,20 @@ export default function CustomersPage() {
 
   const totalRevenue = customers.reduce((s, c) => s + c.totalSpent, 0);
   const totalOrders = customers.reduce((s, c) => s + c._count.sales, 0);
+  const totalOutstanding = customers.reduce((s, c) => s + c.currentBalance, 0);
   const activeCustomer = customers.find(c => c.id === selectedCustomerId);
+
+  useEffect(() => {
+    if (selectedCustomerId) {
+      setLoadingCredit(true);
+      fetch(`/api/customers/${selectedCustomerId}/credit`)
+        .then(res => res.json())
+        .then(data => { setCreditData(data); setLoadingCredit(false); })
+        .catch(() => setLoadingCredit(false));
+    } else {
+      setCreditData(null);
+    }
+  }, [selectedCustomerId]);
 
 
   return (
@@ -195,10 +214,10 @@ export default function CustomersPage() {
             <thead>
               <tr className="bg-page-bg/50 border-b border-border/50">
                 <th className="text-left py-4 px-6 font-bold text-text-muted text-[11px] uppercase tracking-wider">Customer</th>
-                <th className="text-left py-4 px-6 font-bold text-text-muted text-[11px] uppercase tracking-wider">Phone</th>
+                <th className="text-left py-4 px-6 font-bold text-text-muted text-[11px] uppercase tracking-wider text-center">Outstanding Balance</th>
+                <th className="text-right py-4 px-6 font-bold text-text-muted text-[11px] uppercase tracking-wider">Credit Limit</th>
                 <th className="text-center py-4 px-6 font-bold text-text-muted text-[11px] uppercase tracking-wider">Orders</th>
                 <th className="text-right py-4 px-6 font-bold text-text-muted text-[11px] uppercase tracking-wider">Total Spent</th>
-                <th className="text-left py-4 px-6 font-bold text-text-muted text-[11px] uppercase tracking-wider">Last Visit</th>
                 <th className="text-center py-4 px-6 font-bold text-text-muted text-[11px] uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -246,25 +265,19 @@ export default function CustomersPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-6">
-                        <span className="flex items-center gap-1.5 text-text-muted">
-                          <Phone className="w-3 h-3" /> {customer.phone}
+                      <td className="py-4 px-6 text-center">
+                        <span className={`font-black ${customer.currentBalance > 0 ? 'text-error' : 'text-text-muted/60'}`}>
+                          ₹{customer.currentBalance.toLocaleString()}
                         </span>
+                      </td>
+                      <td className="py-4 px-6 text-right text-text-muted font-bold">
+                        ₹{customer.creditLimit.toLocaleString()}
                       </td>
                       <td className="py-4 px-6 text-center">
                         <span className="font-black text-text-primary">{customer._count.sales}</span>
                       </td>
-                      <td className="py-4 px-6 text-right font-bold text-primary">
+                      <td className="py-4 px-6 text-right font-black text-primary">
                         ₹{customer.totalSpent.toLocaleString('en-IN')}
-                      </td>
-                      <td className="py-4 px-6">
-                        {lastSaleDate ? (
-                          <span className="flex items-center gap-1.5 text-text-muted text-xs">
-                            <Calendar className="w-3 h-3" /> {timeAgo(lastSaleDate)}
-                          </span>
-                        ) : (
-                          <span className="text-text-muted/40 text-xs">No purchases</span>
-                        )}
                       </td>
                       <td className="py-4 px-6">
                         <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -351,15 +364,54 @@ export default function CustomersPage() {
                   </div>
                 </div>
 
+                {/* Udhar / Credit Section */}
+                <div className="pt-2">
+                  <h3 className="text-xs font-black text-text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <IndianRupee className="w-3 h-3 text-error" /> Credit (Udhar) Status
+                  </h3>
+                  <div className="bg-orange-50/50 border border-orange-200 rounded-2xl p-5 space-y-4">
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <p className="text-[10px] font-black text-orange-700 uppercase tracking-widest">Balance Owed</p>
+                        <p className={`text-2xl font-black ${activeCustomer.currentBalance > 0 ? 'text-error' : 'text-text-muted'}`}>₹{activeCustomer.currentBalance.toLocaleString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Limit</p>
+                        <p className="text-sm font-black text-text-primary">₹{activeCustomer.creditLimit.toLocaleString()}</p>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-orange-200">
+                      <p className="text-[9px] font-black text-text-muted uppercase mb-2 tracking-widest">Recent Transactions</p>
+                      <div className="space-y-2">
+                        {loadingCredit ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                        ) : creditData?.transactions?.length > 0 ? (
+                          creditData.transactions.map((t: any, i: number) => (
+                            <div key={i} className="flex justify-between items-center text-[11px]">
+                              <span className="text-text-muted font-bold truncate max-w-[140px]">{t.type.replace(/_/g, ' ')}</span>
+                              <span className={`font-black ${t.type.includes('PAYMENT') ? 'text-secondary-green' : 'text-error'}`}>
+                                {t.type.includes('PAYMENT') ? '-' : '+'}₹{t.amount}
+                              </span>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-[10px] text-text-muted italic">No recent credit activity</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Additional Info */}
                 <div className="bg-page-bg rounded-xl p-5 border border-border/50 space-y-4">
                     <div className="flex justify-between items-center text-sm">
-                        <span className="text-text-muted">Customer Since</span>
-                        <span className="font-semibold text-text-primary">{new Date(activeCustomer.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
                         <span className="text-text-muted">Mobile No</span>
                         <span className="font-semibold text-text-primary">{activeCustomer.phone}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-text-muted">Member Since</span>
+                        <span className="font-semibold text-text-primary">{new Date(activeCustomer.createdAt).toLocaleDateString()}</span>
                     </div>
                 </div>
 
@@ -445,14 +497,15 @@ export default function CustomersPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-text-primary mb-1.5">Email (Optional)</label>
+                  <label className="block text-sm font-bold text-text-primary mb-1.5">Credit Limit (₹)</label>
                   <input
-                    type="email"
-                    value={formData.email}
-                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                    type="number"
+                    value={formData.creditLimit}
+                    onChange={e => setFormData({ ...formData, creditLimit: e.target.value })}
                     className="w-full px-4 py-2.5 bg-input-bg border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
-                    placeholder="e.g. rahul@email.com"
+                    placeholder="0.00 (No limit if 0)"
                   />
+                  <p className="text-[10px] text-text-muted mt-1 font-medium">Maximum credit allowed for this customer.</p>
                 </div>
 
                 <div className="flex gap-3 pt-2">
