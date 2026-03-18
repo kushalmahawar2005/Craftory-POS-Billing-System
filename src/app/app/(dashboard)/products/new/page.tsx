@@ -124,16 +124,15 @@ export default function NewProductPage() {
                <div className="bg-white border border-gray-100 rounded-lg p-5 space-y-4 shadow-sm">
                   <span className="text-[11px] font-bold text-gray-500 uppercase block mb-2">Product Image</span>
                   <ImageUpload 
-                     imageUrl={imageUrl}
-                     onUploadSuccess={(url, publicId) => {
+                     currentImage={imageUrl}
+                     onUpload={(url, publicId) => {
                         setImageUrl(url);
                         setImagePublicId(publicId);
                      }}
-                     onRemove={() => {
+                     onDelete={() => {
                         setImageUrl('');
                         setImagePublicId('');
                      }}
-                     publicId={imagePublicId}
                   />
                   <p className="text-[10px] text-gray-400 mt-2 text-center leading-relaxed">
                      Upload a high-quality product image (max 5 MB).
