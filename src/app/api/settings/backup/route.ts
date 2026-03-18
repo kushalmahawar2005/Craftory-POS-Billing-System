@@ -31,7 +31,7 @@ export async function GET(req: Request) {
             });
 
             const headers = ['Name', 'Barcode', 'Category', 'Price', 'Cost Price', 'Stock', 'Tax Rate'];
-            const rows = products.map(p => [
+            const rows = products.map((p: typeof products[number]) => [
                 p.name,
                 p.barcode || '',
                 p.category?.name || 'General',
@@ -43,7 +43,7 @@ export async function GET(req: Request) {
 
             const csvContent = [
                 headers.join(','),
-                ...rows.map(r => r.join(','))
+                ...rows.map((r: (string | number)[]) => r.join(','))
             ].join('\n');
 
             return new NextResponse(csvContent, {

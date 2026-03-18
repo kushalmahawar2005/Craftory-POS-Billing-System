@@ -112,7 +112,7 @@ export async function GET(req: Request) {
                 take: 10
             });
 
-            const enriched = await Promise.all(items.map(async (item) => {
+            const enriched = await Promise.all(items.map(async (item: typeof items[number]) => {
                 const product = await db.product.findUnique({
                     where: { id: item.productId },
                     select: { 
@@ -144,7 +144,7 @@ export async function GET(req: Request) {
                 }
             });
 
-            const formatted = sales.map(sale => ({
+            const formatted = sales.map((sale: typeof sales[number]) => ({
                 id: sale.id,
                 invoiceNumber: sale.invoiceNumber,
                 customerName: sale.customer?.name || 'Walk-in Customer',
@@ -166,7 +166,7 @@ export async function GET(req: Request) {
                 take: 5
             });
 
-            const enriched = await Promise.all(items.map(async (item) => {
+            const enriched = await Promise.all(items.map(async (item: typeof items[number]) => {
                 const product = await db.product.findUnique({
                     where: { id: item.productId },
                     select: { name: true }
@@ -195,11 +195,11 @@ export async function GET(req: Request) {
                 }
             });
 
-            const data = categories.map(cat => ({
+            const data = categories.map((cat: typeof categories[number]) => ({
                 name: cat.name,
-                value: cat.products.reduce((acc, prod) => 
-                    acc + prod.saleItems.reduce((accI, item) => accI + item.total, 0), 0)
-            })).filter(c => c.value > 0);
+                value: cat.products.reduce((acc: number, prod: typeof cat.products[number]) => 
+                    acc + prod.saleItems.reduce((accI: number, si: { total: number }) => accI + si.total, 0), 0)
+            })).filter((c: { name: string; value: number }) => c.value > 0);
 
             return NextResponse.json(data);
         }

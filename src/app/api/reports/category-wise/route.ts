@@ -36,12 +36,12 @@ export async function GET(req: Request) {
             }
         });
 
-        const report = categories.map(cat => {
+        const report = categories.map((cat: typeof categories[number]) => {
             let totalSales = 0;
             let totalQuantity = 0;
             
-            cat.products.forEach(prod => {
-                prod.saleItems.forEach(item => {
+            cat.products.forEach((prod: typeof cat.products[number]) => {
+                prod.saleItems.forEach((item: { total: number; quantity: number }) => {
                     totalSales += item.total;
                     totalQuantity += item.quantity;
                 });
@@ -52,8 +52,8 @@ export async function GET(req: Request) {
                 sales: totalSales,
                 quantity: totalQuantity
             };
-        }).filter(c => c.sales > 0 || c.quantity > 0)
-        .sort((a, b) => b.sales - a.sales);
+        }).filter((c: { name: string; sales: number; quantity: number }) => c.sales > 0 || c.quantity > 0)
+        .sort((a: { sales: number }, b: { sales: number }) => b.sales - a.sales);
 
         return NextResponse.json(report);
     } catch (error) {

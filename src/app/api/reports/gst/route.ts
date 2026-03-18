@@ -28,7 +28,7 @@ export async function GET(req: Request) {
             }
         });
 
-        const gstReport = sales.map(sale => {
+        const gstReport = sales.map((sale: typeof sales[number]) => {
             // Calculate GST breakdown if not directly stored
             // Assuming tax is stored as totalGst or we can calculate from items
             // For now, let's use a simplified calculation or existing fields
