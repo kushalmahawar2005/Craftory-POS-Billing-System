@@ -503,7 +503,7 @@ export default function EditProductPage() {
                                         <span key={vIdx} className="px-3 py-1 bg-blue-100 text-blue-600 text-[11px] font-bold rounded-lg flex items-center gap-2">
                                            {v} <button onClick={() => {
                                               const n = [...attributes];
-                                              n[idx].values = n[idx].values.filter((_, i: number) => i !== vIdx);
+                                              n[idx].values = n[idx].values.filter((_: any, i: number) => i !== vIdx);
                                               setAttributes(n);
                                            }}><X className="w-3 h-3 text-blue-400 hover:text-blue-600" /></button>
                                         </span>
@@ -522,7 +522,7 @@ export default function EditProductPage() {
                                      }} placeholder="Type value and hit Enter" className="bg-transparent border-none outline-none text-[13px] font-bold py-1" />
                                   </div>
                                </div>
-                               <button onClick={() => setAttributes(attributes.filter((_, i: number) => i !== idx))} className="p-2 text-gray-300 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
+                               <button onClick={() => setAttributes(attributes.filter((_: any, i: number) => i !== idx))} className="p-2 text-gray-300 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
                             </div>
                          ))}
                       </div>
