@@ -2,393 +2,307 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingCart, Package, BarChart3, Users, Settings,
-  ChevronLeft, ChevronRight, Bell, Search, LogOut, Menu, X, Store, FileText, Truck, UserCog, ChevronDown, Plus, Shield, ClipboardList, RotateCcw, HandCoins
+  ChevronLeft, ChevronRight, Bell, Search, LogOut, Menu, X, Store, FileText,
+  Truck, UserCog, ChevronDown, Plus, Shield, ClipboardList, RotateCcw, HandCoins,
+  Zap, Building2, Megaphone, QrCode, CircleDollarSign, ArrowLeftRight,
+  Receipt, Settings2, ShieldCheck, Wallet, Activity, Target, Globe,
+  Box, Sparkles, Command, UserCheck, HardDrive, Cpu, Layers,
+  ArrowUpRight, Loader2, Home, Compass, Boxes, History
 } from 'lucide-react';
 
+// ─── Types ──────────────────────────────────────────────
+type SubItem = { label: string; href: string };
 type NavItem = {
   label: string;
   icon: any;
   href?: string;
-  subItems?: { label: string; href: string }[];
+  subItems?: SubItem[];
   roles?: string[];
 };
 
-const navItems: NavItem[] = [
-  { label: 'Dashboard', icon: LayoutDashboard, href: '/app/dashboard' },
-  { label: 'POS Billing', icon: ShoppingCart, href: '/app/pos' },
+type SidebarSection = {
+  id: string;
+  label: string;
+  icon: any;
+  navItems: NavItem[];
+};
+
+const sidebarSections: SidebarSection[] = [
   {
-    label: 'Inventory',
-    icon: Package,
-    subItems: [
-      { label: 'Products', href: '/app/products' },
-      { label: 'Categories', href: '/app/categories' },
-      { label: 'Adjustments', href: '/app/adjustments' },
+    id: 'business',
+    label: 'Business',
+    icon: Home,
+    navItems: [
+      { label: 'Get Started', icon: Zap, href: '/app/get-started' },
+      { label: 'Dashboard', icon: LayoutDashboard, href: '/app/dashboard' },
+      {
+        label: 'Inventory',
+        icon: Package,
+        subItems: [
+          { label: 'Products', href: '/app/products' },
+          { label: 'Categories', href: '/app/categories' },
+          { label: 'Adjustments', href: '/app/adjustments' },
+        ],
+        roles: ['ADMIN', 'MANAGER']
+      },
+      {
+        label: 'Sales',
+        icon: ShoppingCart,
+        subItems: [
+          { label: 'POS Billing', href: '/app/pos' },
+          { label: 'Invoices', href: '/app/invoices' },
+          { label: 'Returns', href: '/app/returns' },
+        ],
+      },
+      {
+        label: 'Orders',
+        icon: FileText,
+        href: '/app/sales-orders'
+      },
+      {
+        label: 'Logistics',
+        icon: Truck,
+        subItems: [
+          { label: 'Purchase Orders', href: '/app/purchase-orders' },
+          { label: 'Suppliers', href: '/app/suppliers' },
+        ],
+        roles: ['ADMIN', 'MANAGER']
+      },
     ],
-    roles: ['ADMIN', 'MANAGER']
   },
-  { label: 'Reports', icon: BarChart3, href: '/app/reports', roles: ['ADMIN', 'MANAGER'] },
-  { label: 'Customers', icon: Users, href: '/app/customers', roles: ['ADMIN', 'MANAGER'] },
-  { label: 'Staff', icon: UserCog, href: '/app/staff', roles: ['ADMIN'] },
-  { label: 'Suppliers', icon: Truck, href: '/app/suppliers', roles: ['ADMIN', 'MANAGER'] },
-  { label: 'Purchase Orders', icon: ClipboardList, href: '/app/purchase-orders', roles: ['ADMIN', 'MANAGER'] },
-  { label: 'Invoices', icon: FileText, href: '/app/invoices' },
-  { label: 'Returns', icon: RotateCcw, href: '/app/returns', roles: ['ADMIN', 'MANAGER'] },
-  { label: 'Credit Book', icon: HandCoins, href: '/app/credit-book', roles: ['ADMIN', 'MANAGER'] },
-  { label: 'Settings', icon: Settings, href: '/app/settings', roles: ['ADMIN'] },
+  {
+    id: 'channels',
+    label: 'Sales Channels',
+    icon: Compass,
+    navItems: [
+      { label: 'Customers', icon: Users, href: '/app/customers', roles: ['ADMIN', 'MANAGER'] },
+      { label: 'Credit Book', icon: HandCoins, href: '/app/credit-book', roles: ['ADMIN', 'MANAGER'] },
+    ],
+  },
+  {
+    id: 'reports',
+    label: 'Reports',
+    icon: BarChart3,
+    navItems: [
+      { label: 'Analytics', icon: BarChart3, href: '/app/reports', roles: ['ADMIN', 'MANAGER'] },
+    ],
+  },
+  {
+    id: 'search',
+    label: 'Search',
+    icon: Search,
+    navItems: [],
+  },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [expandedNav, setExpandedNav] = useState<string>('Inventory');
+  const [activeSection, setActiveSection] = useState('business');
+  const [expandedNav, setExpandedNav] = useState<string>('');
   const [user, setUser] = useState<any>(null);
   const [globalSearch, setGlobalSearch] = useState('');
   const [searchResults, setSearchResults] = useState<{ products: any[], invoices: any[] }>({ products: [], invoices: [] });
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
-    // Fetch user session
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => {
-        if (data.authenticated) {
-          setUser(data.user);
-        } else {
-          window.location.href = '/login';
-        }
+        if (data.authenticated) { setUser(data.user); } else { window.location.href = '/login'; }
       })
-      .catch(() => {
-        window.location.href = '/login';
-      });
+      .catch(() => { window.location.href = '/login'; });
   }, []);
 
   useEffect(() => {
-    if (globalSearch.length < 2) {
-      setSearchResults({ products: [], invoices: [] });
-      setShowResults(false);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const [pRes, iRes] = await Promise.all([
-          fetch(`/api/products?q=${globalSearch}&limit=5`).then(r => r.json()),
-          fetch(`/api/sales?q=${globalSearch}&limit=5`).then(r => r.json())
-        ]);
-        setSearchResults({
-          products: pRes.products || [],
-          invoices: iRes.sales || []
-        });
-        setShowResults(true);
-      } catch (e) {
-        console.error('Search error', e);
-      } finally {
-        setIsSearching(false);
+    // Determine active section based on current path
+    for (const section of sidebarSections) {
+      for (const item of section.navItems) {
+        if (item.href && (pathname === item.href || pathname.startsWith(item.href + '/'))) { 
+          setActiveSection(section.id); return; 
+        }
+        if (item.subItems) {
+          for (const sub of item.subItems) {
+            if (pathname === sub.href || pathname.startsWith(sub.href + '/')) {
+              setActiveSection(section.id); setExpandedNav(item.label); return;
+            }
+          }
+        }
       }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [globalSearch]);
+    }
+  }, [pathname]);
 
   const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } catch (e) {
-      console.error('Logout failed', e);
-    } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    }
+    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (e) { console.error('Logout failed', e); }
+    finally { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }
   };
 
-  // Filter nav items based on user role
-  const visibleNavItems = navItems.filter(item => {
-    if (!item.roles) return true; // visible to all
-    if (!user?.role) return false; // hide until role loaded
+  const currentSection = sidebarSections.find(s => s.id === activeSection);
+  const filterByRole = (items: NavItem[]) => items.filter(item => {
+    if (!item.roles) return true;
+    if (!user?.role) return false;
     return item.roles.includes(user.role);
   });
 
-  const roleColors: Record<string, string> = {
-    ADMIN: 'bg-primary/20 text-primary',
-    MANAGER: 'bg-blue-500/20 text-blue-400',
-    CASHIER: 'bg-green-500/20 text-green-400',
-  };
-
-  if (!mounted) {
-    return (
-      <div className="flex h-screen bg-page-bg">
-        <div className="w-[240px] hidden lg:block bg-sidebar-dark" />
-        <div className="flex-1" />
-      </div>
-    );
-  }
-
+  if (!mounted) return <div className="flex h-screen bg-[#1e2128]" />;
 
   return (
-    <div className="flex h-screen bg-page-bg overflow-hidden">
-      {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-40 bg-sidebar-dark flex flex-col transition-all duration-300
-        ${collapsed ? 'w-[68px]' : 'w-[240px]'}
-        ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
-      >
-        {/* Logo */}
-        <div className="flex items-center gap-2.5 px-4 h-16 border-b border-white/8">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
-            <ShoppingCart className="w-4 h-4 text-white" />
-          </div>
-          {!collapsed && (
-            <motion.span initial={false} animate={{ opacity: collapsed ? 0 : 1 }}
-              className="text-base font-bold text-white whitespace-nowrap">
-              Craftory<span className="text-blue-400">POS</span>
-            </motion.span>
-          )}
+    <div className="flex h-screen bg-[#f5f7f9] overflow-hidden text-[#1e2128]">
+      {/* ─── ICON RAIL (ZOHO) ─── */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-[68px] bg-[#1e2128] flex flex-col items-center transition-transform duration-300 ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div className="w-full h-14 flex items-center justify-center border-b border-white/5">
+           <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center border border-white/10">
+              <Boxes className="w-5 h-5 text-white" />
+           </div>
         </div>
-
-        {/* Role Badge */}
-        {!collapsed && user?.role && (
-          <div className="mx-3 mt-3 mb-1">
-            <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ${roleColors[user.role] || 'bg-white/10 text-white'}`}>
-              <Shield className="w-3 h-3" />
-              <span className="text-[10px] font-black uppercase tracking-widest">{user.role}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Nav Items */}
-        <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-hide">
-          {visibleNavItems.map((item) => {
-            const hasSubItems = item.subItems && item.subItems.length > 0;
-            const isSubItemActive = hasSubItems && item.subItems!.some(sub => pathname === sub.href || pathname.startsWith(sub.href + '/'));
-            const isActive = item.href ? (pathname === item.href || pathname.startsWith(item.href + '/')) : isSubItemActive;
-            const Icon = item.icon;
-
+        
+        <div className="flex-1 w-full pt-4 space-y-1">
+          {sidebarSections.map(section => {
+            const Icon = section.icon;
+            const isActive = activeSection === section.id;
             return (
-              <div key={item.label} className="mb-1">
-                {item.href ? (
-                  <Link
-                    href={item.href}
-                    onClick={() => setMobileOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group relative ${
-                      isActive
-                        ? 'bg-primary/15 text-white'
-                        : 'text-sidebar-text hover:text-white hover:bg-sidebar-hover'
-                    }`}
-                  >
-                    {isActive && (
-                      <motion.div layoutId="activeNav" className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full" />
-                    )}
-                    <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-primary' : ''}`} />
-                    {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
-                  </Link>
-                ) : (
-                  <button
-                    onClick={() => setExpandedNav(expandedNav === item.label ? '' : item.label)}
-                    className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all group relative ${
-                      isActive || expandedNav === item.label
-                        ? 'text-white'
-                        : 'text-sidebar-text hover:text-white hover:bg-sidebar-hover'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                       {isActive && expandedNav !== item.label && (
-                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full" />
-                       )}
-                       <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-primary' : ''}`} />
-                       {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
-                    </div>
-                    {!collapsed && (
-                      <ChevronDown className={`w-4 h-4 text-sidebar-text transition-transform ${expandedNav === item.label ? 'rotate-180' : ''}`} />
-                    )}
-                  </button>
-                )}
-
-                {/* Sub Menu */}
-                <AnimatePresence>
-                  {hasSubItems && !collapsed && expandedNav === item.label && (
-                    <motion.div
-                      key={item.label}
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="mt-1 flex flex-col space-y-1 overflow-hidden"
-                    >
-                      {item.subItems!.map(sub => {
-                        const subActive = pathname === sub.href;
-                        return (
-                          <div key={sub.href} className="flex items-center justify-between w-full group/sub">
-                            <Link
-                              href={sub.href}
-                              onClick={() => setMobileOpen(false)}
-                              className={`flex-1 pl-11 pr-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between ${
-                                pathname === sub.href
-                                  ? 'bg-primary text-white'
-                                  : 'text-gray-400 hover:text-white hover:bg-white/5'
-                              }`}
-                            >
-                              <span>{sub.label}</span>
-                            </Link>
-                            {sub.label === 'Products' && (
-                              <Link
-                                href="/app/products/new"
-                                className="mr-3 p-1 hover:bg-white/10 rounded transition-colors"
-                              >
-                                <Plus className="w-3.5 h-3.5 opacity-50 hover:opacity-100" />
-                              </Link>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              <button key={section.id} onClick={() => setActiveSection(section.id)} className={`relative w-full flex flex-col items-center justify-center py-4 transition-all ${isActive ? 'bg-[#2b303b] text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+                {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#1a6bdb]" />}
+                <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                <span className="text-[10px] font-medium mt-1.5 leading-none text-center px-1">{section.label}</span>
+              </button>
             );
           })}
-        </nav>
+        </div>
 
-        {/* Collapse Toggle */}
-        <div className="px-2 py-3 border-t border-white/8">
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-text hover:text-white hover:bg-sidebar-hover transition-all w-full"
-          >
-            <LogOut className="w-[18px] h-[18px] shrink-0" />
-            {!collapsed && <span>Logout</span>}
+        <div className="pb-6 space-y-4">
+          <Link href="/app/settings" className={`group flex items-center justify-center w-full py-3 ${pathname.includes('/settings') ? 'text-white' : 'text-gray-500 hover:text-white'}`}>
+             <Settings className="w-5 h-5" />
+          </Link>
+          <button className="relative group flex items-center justify-center w-full py-3 text-gray-500 hover:text-white">
+             <Bell className="w-5 h-5" />
+             <span className="absolute top-3 right-5 w-2 h-2 bg-red-500 rounded-full border-2 border-[#1e2128]" />
           </button>
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="hidden lg:flex items-center justify-center w-full mt-1 py-2 text-sidebar-text hover:text-white transition-colors"
-          >
-            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          <button onClick={handleLogout} className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white shadow-lg mx-auto">
+             {user?.name?.charAt(0) || 'U'}
           </button>
         </div>
       </aside>
 
-      {/* Mobile Overlay */}
-      {mobileOpen && (
-        <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setMobileOpen(false)} />
-      )}
+      {/* ─── NAV RAIL (ZOHO) ─── */}
+      <aside className={`fixed inset-y-0 left-[68px] z-40 w-[230px] bg-[#232730] flex flex-col transition-transform duration-300 ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} border-r border-white/5`}>
+        <div className="px-5 h-14 flex items-center border-b border-white/5">
+           <span className="text-sm font-bold text-white truncate">{user?.shop?.name || 'Kushal General Store'}</span>
+           <ChevronDown className="w-3.5 h-3.5 text-gray-500 ml-auto" />
+        </div>
 
-      {/* Main Content */}
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${collapsed ? 'lg:ml-[68px]' : 'lg:ml-[240px]'}`}>
-        {/* Topbar */}
-        {!pathname.includes('/products/new') && (
-          <header className="h-16 bg-white border-b border-border flex items-center justify-between px-4 lg:px-6 sticky top-0 z-20">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100">
-                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-              <div className="hidden sm:flex items-center gap-2 bg-page-bg rounded-lg px-3 py-2 w-72 relative">
-                <Search className={`w-4 h-4 ${isSearching ? 'text-primary animate-pulse' : 'text-text-muted'}`} />
-                <input
-                  type="text"
-                  value={globalSearch}
-                  onChange={(e) => setGlobalSearch(e.target.value)}
-                  onFocus={() => globalSearch.length >= 2 && setShowResults(true)}
-                  placeholder="Search products, invoices..."
-                  className="bg-transparent text-sm outline-none w-full placeholder:text-text-muted"
-                />
+        <nav className="flex-1 pt-6 px-3 overflow-y-auto no-scrollbar space-y-0.5">
+          <AnimatePresence mode="wait">
+            <motion.div key={activeSection} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-0.5">
+               {activeSection === 'channels' && (
+                 <div className="px-3 mb-4">
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Sales Channels</p>
+                    <div className="bg-[#1a6bdb] px-4 py-2.5 rounded-lg flex items-center gap-3 text-white text-sm font-semibold shadow-lg">
+                       <ShoppingCart className="w-4 h-4" />
+                       <span>POS</span>
+                    </div>
+                 </div>
+               )}
 
-                {/* Search Results Dropdown */}
-                <AnimatePresence>
-                  {showResults && (globalSearch.length >= 2) && (
-                    <>
-                      <div className="fixed inset-0 z-10" onClick={() => setShowResults(false)} />
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-border shadow-2xl z-20 overflow-hidden max-h-[400px] overflow-y-auto"
-                      >
-                        {/* Products */}
-                        {searchResults.products.length > 0 && (
-                          <div className="p-2 border-b border-border">
-                            <p className="px-3 py-1.5 text-[10px] font-black text-text-muted uppercase tracking-widest">Products</p>
-                            {searchResults.products.map(p => (
-                              <Link
-                                key={p.id}
-                                href="/app/products"
-                                onClick={() => { setGlobalSearch(''); setShowResults(false); }}
-                                className="flex items-center gap-3 p-2 hover:bg-page-bg rounded-lg transition-colors group"
-                              >
-                                <div className="w-8 h-8 bg-primary/5 rounded flex items-center justify-center">
-                                  <Package className="w-4 h-4 text-primary" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-bold text-text-primary truncate">{p.name}</p>
-                                  <p className="text-[10px] text-text-muted">₹{p.price.toFixed(2)} · Stock: {p.stockQuantity}</p>
-                                </div>
-                              </Link>
-                            ))}
-                          </div>
-                        )}
+              {currentSection && filterByRole(currentSection.navItems).map((item) => {
+                const hasSubItems = item.subItems && item.subItems.length > 0;
+                const isSubItemActive = hasSubItems && item.subItems!.some(sub => pathname === sub.href || pathname.startsWith(sub.href + '/'));
+                const isActive = item.href ? (pathname === item.href || pathname.startsWith(item.href + '/')) : isSubItemActive;
+                const Icon = item.icon;
 
-                        {/* Invoices */}
-                        {searchResults.invoices.length > 0 && (
-                          <div className="p-2">
-                            <p className="px-3 py-1.5 text-[10px] font-black text-text-muted uppercase tracking-widest">Invoices</p>
-                            {searchResults.invoices.map(inv => (
-                              <Link
-                                key={inv.id}
-                                href="/app/invoices"
-                                onClick={() => { setGlobalSearch(''); setShowResults(false); }}
-                                className="flex items-center gap-3 p-2 hover:bg-page-bg rounded-lg transition-colors group"
-                              >
-                                <div className="w-8 h-8 bg-analytics-purple/5 rounded flex items-center justify-center">
-                                  <FileText className="w-4 h-4 text-analytics-purple" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-bold text-text-primary truncate uppercase">{inv.invoiceNumber}</p>
-                                  <p className="text-[10px] text-text-muted">{inv.customer?.name || 'Walk-in'} · ₹{inv.total.toFixed(2)}</p>
-                                </div>
-                              </Link>
-                            ))}
-                          </div>
-                        )}
+                return (
+                  <div key={item.label}>
+                    {item.href ? (
+                      <Link href={item.href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-[13px] font-medium transition-colors ${isActive ? 'bg-[#2b303b] text-white' : 'text-[#94a3b8] hover:text-white hover:bg-white/5'}`}>
+                        <Icon className={`w-4 h-4 ${isActive ? 'text-[#1a6bdb]' : 'text-gray-500'}`} />
+                        <span>{item.label}</span>
+                      </Link>
+                    ) : (
+                      <button onClick={() => setExpandedNav(expandedNav === item.label ? '' : item.label)} className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg text-[13px] font-medium transition-colors ${isActive || expandedNav === item.label ? 'text-white' : 'text-[#94a3b8] hover:text-white hover:bg-white/5'}`}>
+                        <div className="flex items-center gap-3">
+                          <Icon className={`w-4 h-4 ${isActive || expandedNav === item.label ? 'text-[#1a6bdb]' : 'text-gray-500'}`} />
+                          <span>{item.label}</span>
+                        </div>
+                        <ChevronRight className={`w-3.5 h-3.5 transition-transform ${expandedNav === item.label ? 'rotate-90' : ''}`} />
+                      </button>
+                    )}
 
-                        {searchResults.products.length === 0 && searchResults.invoices.length === 0 && !isSearching && (
-                          <div className="p-8 text-center">
-                            <Search className="w-8 h-8 text-text-muted/20 mx-auto mb-2" />
-                            <p className="text-xs text-text-muted font-medium">No results found for "{globalSearch}"</p>
-                          </div>
-                        )}
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
+                    {hasSubItems && expandedNav === item.label && (
+                      <div className="mt-1 space-y-0.5 pl-10 pr-2">
+                        {item.subItems!.map(sub => {
+                          const subActive = pathname === sub.href || pathname.startsWith(sub.href + '/');
+                          return (
+                            <Link key={sub.href} href={sub.href} onClick={() => setMobileOpen(false)} className={`block py-2 text-[13px] transition-colors ${subActive ? 'text-white font-semibold' : 'text-[#94a3b8] hover:text-white hover:underline'}`}>
+                              {sub.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </motion.div>
+          </AnimatePresence>
+        </nav>
+
+        <div className="p-4">
+           <div className="bg-[#1a1c22] p-4 rounded-xl border border-white/5">
+              <p className="text-[11px] text-[#94a3b8] leading-relaxed mb-3">You're currently on our <span className="text-white font-bold">Premium Trial</span></p>
+              <div className="flex gap-2">
+                 <button className="flex-1 py-1.5 bg-[#1a6bdb] text-white text-[11px] font-bold rounded-md hover:bg-blue-600 transition-colors">Upgrade</button>
+                 <button className="flex-1 py-1.5 bg-white/5 text-[#94a3b8] text-[11px] font-bold rounded-md hover:bg-white/10 transition-colors border border-white/5">Switch Trial</button>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <Bell className="w-5 h-5 text-text-muted" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full" />
-              </button>
-              <div className="flex items-center gap-2 pl-3 border-l border-border">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                  <span className="text-xs font-bold text-primary">{user?.name?.charAt(0) || 'U'}</span>
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-sm font-medium text-text-primary leading-none">{user?.name || 'Loading...'}</p>
-                  <p className="text-[11px] text-text-muted">{user?.role || '...'}</p>
-                </div>
-              </div>
-            </div>
-          </header>
-        )}
+           </div>
+        </div>
+      </aside>
 
-        {/* Page Content */}
-        <main className={`flex-1 overflow-y-auto ${pathname.includes('/products/new') ? '' : 'p-4 lg:p-6'}`}>
-          {children}
+      {/* ─── MAIN CONTENT ─── */}
+      <div className="flex-1 ml-0 lg:ml-[298px] flex flex-col h-full bg-[#f5f7f9] transition-all overflow-hidden">
+        <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-30">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-2 text-gray-500"><Menu className="w-5 h-5" /></button>
+            <div className="text-sm font-bold flex items-center gap-2">
+               <span className="text-gray-400">POS</span>
+               <span className="w-1 h-1 bg-gray-300 rounded-full" />
+               <span className="text-gray-700">{pathname.split('/').pop()?.replace('-', ' ') || 'Dashboard'}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <div className="hidden sm:flex items-center gap-2 bg-gray-100 rounded-full px-4 py-1.5 w-[300px] border border-transparent focus-within:bg-white focus-within:border-blue-200 transition-all">
+              <Search className="w-4 h-4 text-gray-400" />
+              <input type="text" placeholder="Search..." className="bg-transparent text-sm outline-none w-full text-gray-700" />
+            </div>
+            
+            <div className="flex items-center gap-3">
+               <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 text-[11px] font-bold rounded-full border border-green-100">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                  SYNCING...
+               </div>
+               <button className="p-2 text-gray-400 hover:text-gray-600"><Globe className="w-5 h-5" /></button>
+               <div className="flex items-center gap-3 border-l border-gray-200 pl-4 ml-2">
+                  <div className="text-right hidden sm:block">
+                     <p className="text-[12px] font-bold text-gray-900 leading-none">NAMAN</p>
+                     <p className="text-[10px] text-blue-600 font-bold uppercase mt-1">ADMIN</p>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-lg">N</div>
+               </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-8 relative no-scrollbar">
+           {children}
         </main>
       </div>
     </div>

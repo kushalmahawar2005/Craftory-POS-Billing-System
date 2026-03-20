@@ -7,30 +7,35 @@ datasource db {
 }
 
 model Shop {
-  id                  String           @id @default(cuid())
+  id                  String                @id @default(cuid())
   shopName            String
   ownerName           String
-  email               String           @unique
+  email               String                @unique
   phone               String?
-  subscriptionPlan    String           @default("FREE")
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
+  subscriptionPlan    String                @default("FREE")
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
   businessType        String?
   gstin               String?
-  gstRegistered       Boolean          @default(false)
+  gstRegistered       Boolean               @default(false)
   gstRegistrationType String?
   gstLegalName        String?
   gstTradeName        String?
   gstRegisteredOn     DateTime?
-  language            String           @default("English")
-  onboardingCompleted Boolean          @default(false)
-  currency            String           @default("INR")
-  timezone            String           @default("Asia/Kolkata")
-  fiscalYearStart     String           @default("APRIL")
-  defaultGSTRate      Float?           @default(18)
-  hsnCodeRequired     Boolean          @default(false)
-  gstReportingPeriod  String?          @default("MONTHLY")
+  language            String                @default("English")
+  onboardingCompleted Boolean               @default(false)
+  currency            String                @default("INR")
+  timezone            String                @default("Asia/Kolkata")
+  fiscalYearStart     String                @default("APRIL")
+  defaultGSTRate      Float?                @default(18)
+  hsnCodeRequired     Boolean               @default(false)
+  gstReportingPeriod  String?               @default("MONTHLY")
+  
+  // Relations
   categories          Category[]
+  brands              Brand[]
+  manufacturers       Manufacturer[]
+  units               Unit[]
   customers           Customer[]
   products            Product[]
   purchaseOrders      PurchaseOrder[]
@@ -42,6 +47,7 @@ model Shop {
   users               User[]
   saleReturns         SaleReturn[]
   creditTransactions  CreditTransaction[]
+  inventoryAdjustments InventoryAdjustment[]
 
   @@map("shops")
 }
@@ -59,46 +65,52 @@ model Subscription {
 }
 
 model Store {
-  id        String  @id @default(cuid())
-  name      String
-  location  String?
-  address   String?
-  city      String?
-  state     String?
-  pincode   String?
+  id                   String                @id @default(cuid())
+  name                 String
+  location             String?
+  address              String?
+  city                 String?
+  state                String?
+  pincode              String?
   receiptTemplate      String?
-  paperSize            String?          @default("80mm")
-  defaultPaymentMethod String?          @default("CASH")
-  shopId    String
-  managerId String?
-  sales     Sale[]
-  manager   User?   @relation("StoreManager", fields: [managerId], references: [id])
-  shop      Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  users     User[]  @relation("StoreStaff")
-  returns   SaleReturn[]
+  paperSize            String?               @default("80mm")
+  defaultPaymentMethod String?               @default("CASH")
+  shopId               String
+  managerId            String?
+  
+  // Relations
+  sales                Sale[]
+  manager              User?                 @relation("StoreManager", fields: [managerId], references: [id])
+  shop                 Shop                  @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  users                User[]                @relation("StoreStaff")
+  returns              SaleReturn[]
+  inventoryAdjustments InventoryAdjustment[]
 
   @@map("stores")
 }
 
 model User {
-  id            String             @id @default(cuid())
-  name          String
-  email         String             @unique
-  passwordHash  String
-  role          Role               @default(CASHIER)
-  phone         String?
-  status        String             @default("Active")
-  isVerified    Boolean            @default(false)
-  createdAt     DateTime           @default(now())
-  shopId        String
-  storeId       String?
-  sales         Sale[]
-  performance   StaffPerformance[]
-  managedStores      Store[]            @relation("StoreManager")
-  shop               Shop               @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  store              Store?             @relation("StoreStaff", fields: [storeId], references: [id])
-  saleReturns        SaleReturn[]
-  creditTransactions CreditTransaction[]
+  id                   String                @id @default(cuid())
+  name                 String
+  email                String                @unique
+  passwordHash         String
+  role                 Role                  @default(CASHIER)
+  phone                String?
+  status               String                @default("Active")
+  isVerified           Boolean               @default(false)
+  createdAt            DateTime              @default(now())
+  shopId               String
+  storeId              String?
+  
+  // Relations
+  sales                Sale[]
+  performance          StaffPerformance[]
+  managedStores        Store[]               @relation("StoreManager")
+  shop                 Shop                  @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  store                Store?                @relation("StoreStaff", fields: [storeId], references: [id])
+  saleReturns          SaleReturn[]
+  creditTransactions   CreditTransaction[]
+  inventoryAdjustments InventoryAdjustment[]
 
   @@map("users")
 }
@@ -116,12 +128,49 @@ model Category {
   parentId    String?
   status      String     @default("ACTIVE")
   updatedAt   DateTime   @updatedAt
+  
+  // Relations
   parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children    Category[] @relation("CategoryHierarchy")
   shop        Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
   products    Product[]
 
   @@map("categories")
+}
+
+model Brand {
+  id        String    @id @default(cuid())
+  name      String
+  shopId    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  shop      Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  products  Product[]
+
+  @@map("brands")
+}
+
+model Manufacturer {
+  id        String    @id @default(cuid())
+  name      String
+  shopId    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  shop      Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  products  Product[]
+
+  @@map("manufacturers")
+}
+
+model Unit {
+  id        String    @id @default(cuid())
+  name      String    // e.g. "kg", "pcs", "box"
+  shopId    String
+  createdAt DateTime  @default(now())
+  shop      Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  products  Product[]
+
+  @@map("units")
 }
 
 model Supplier {
@@ -131,6 +180,8 @@ model Supplier {
   email          String?
   address        String?
   shopId         String
+  
+  // Relations
   products       Product[]
   purchaseOrders PurchaseOrder[]
   shop           Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
@@ -139,30 +190,80 @@ model Supplier {
 }
 
 model Product {
-  id            String         @id @default(cuid())
-  name          String
-  description   String?
-  barcode       String?
-  sku           String?
-  price         Float
-  costPrice     Float?
-  taxRate       Float          @default(0)
-  stockQuantity Int            @default(0)
-  imageUrl      String?
-  imagePublicId String?
-  createdAt     DateTime       @default(now())
-  shopId        String
-  categoryId    String?
-  supplierId    String?
-  inventoryLogs InventoryLog[]
-  category      Category?      @relation(fields: [categoryId], references: [id])
-  shop          Shop           @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  supplier      Supplier?      @relation(fields: [supplierId], references: [id])
-  purchaseItems PurchaseItem[]
-  saleItems     SaleItem[]
-  returnItems   SaleReturnItem[]
+  id                  String                @id @default(cuid())
+  name                String
+  description         String?
+  barcode             String?
+  sku                 String?
+  price               Float                 // Selling Price
+  costPrice           Float?                // Purchase Price
+  taxRate             Float                 @default(0)
+  stockQuantity       Int                   @default(0)
+  reorderLevel        Int?                  @default(0)
+  itemType            String                @default("Goods") // Goods or Service
+  hasVariants         Boolean               @default(false)
+  
+  // Images
+  imageUrl            String?               // Primary Image
+  imagePublicId       String?
+  frontImageUrl       String?
+  frontImagePublicId  String?
+  rearImageUrl        String?
+  rearImagePublicId   String?
+  gallery             ProductImage[]
+  
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  
+  // Relations
+  shopId              String
+  categoryId          String?
+  brandId             String?
+  manufacturerId      String?
+  unitId              String?
+  supplierId          String?
+  
+  category            Category?             @relation(fields: [categoryId], references: [id])
+  brand               Brand?                @relation(fields: [brandId], references: [id])
+  manufacturer        Manufacturer?         @relation(fields: [manufacturerId], references: [id])
+  unit                Unit?                 @relation(fields: [unitId], references: [id])
+  shop                Shop                  @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  supplier            Supplier?             @relation(fields: [supplierId], references: [id])
+  
+  variants            ProductVariant[]
+  inventoryLogs       InventoryLog[]
+  purchaseItems       PurchaseItem[]
+  saleItems           SaleItem[]
+  returnItems         SaleReturnItem[]
+  adjustmentItems     AdjustmentItem[]
 
   @@map("products")
+}
+
+model ProductVariant {
+  id            String   @id @default(cuid())
+  sku           String?
+  barcode       String?
+  price         Float
+  stockQuantity Int      @default(0)
+  attributes    Json     // e.g. { "Color": "Red", "Size": "XL" }
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  saleItems     SaleItem[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("product_variants")
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  url       String
+  publicId  String
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
 }
 
 model InventoryLog {
@@ -211,6 +312,8 @@ model Sale {
   storeId            String?
   customerId         String?
   staffId            String
+  
+  // Relations
   items              SaleItem[]
   customer           Customer?           @relation(fields: [customerId], references: [id])
   shop               Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
@@ -229,7 +332,9 @@ model SaleItem {
   total       Float
   saleId      String
   productId   String
+  variantId   String?
   product     Product          @relation(fields: [productId], references: [id])
+  variant     ProductVariant?  @relation(fields: [variantId], references: [id])
   sale        Sale             @relation(fields: [saleId], references: [id], onDelete: Cascade)
   returnItems SaleReturnItem[]
 
@@ -372,4 +477,31 @@ model CreditTransaction {
   staff         User     @relation(fields: [processedBy], references: [id])
 
   @@map("credit_transactions")
+}
+
+model InventoryAdjustment {
+  id             String   @id @default(cuid())
+  reason         String   // e.g. "Damaged", "Stolen", "Stock Count Correction", "Expired"
+  adjustmentDate DateTime @default(now())
+  note           String?
+  shopId         String
+  storeId        String?
+  staffId        String
+  items          AdjustmentItem[]
+  shop           Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  staff          User     @relation(fields: [staffId], references: [id])
+  store          Store?   @relation(fields: [storeId], references: [id])
+
+  @@map("inventory_adjustments")
+}
+
+model AdjustmentItem {
+  id              String              @id @default(cuid())
+  productId       String
+  quantityChange  Int                 // Positive for extra, negative for loss
+  adjustmentId    String
+  product         Product             @relation(fields: [productId], references: [id])
+  adjustment      InventoryAdjustment @relation(fields: [adjustmentId], references: [id], onDelete: Cascade)
+
+  @@map("adjustment_items")
 }

@@ -123,8 +123,22 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json().catch(() => ({}));
-        const { businessType: overrideType, reset = false } = body;
+        const { name, businessType: overrideType, reset = false } = body;
 
+        // NEW: Handle Manual Creation
+        if (name) {
+            const category = await db.category.create({
+                data: {
+                    name,
+                    shopId: session.shopId,
+                    status: 'ACTIVE',
+                    level: 0
+                }
+            });
+            return NextResponse.json(category);
+        }
+
+        // EXISTING: Seed logic (if no name provided)
         if (reset) {
             await db.category.deleteMany({ where: { shopId: session.shopId } });
         }

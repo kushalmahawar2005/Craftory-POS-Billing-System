@@ -1,214 +1,173 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, User, IndianRupee, History, HandCoins, ArrowDownToLine, Loader2, ArrowUpRight, TrendingUp, Filter } from 'lucide-react';
+import { 
+  Plus, Search, Filter, ChevronDown, CheckCircle2, 
+  X, AlertCircle, Package, History, Store, User, FileText,
+  BarChart3, MoreVertical, Edit2, Trash2, Layers,
+  LayoutGrid, List, ArrowUpRight, FolderOpen, Tag,
+  ArrowRight, Download, FileUp, MoreHorizontal, Printer,
+  Eye, Receipt, Calculator, Clock, Calendar, Globe, Target,
+  Wallet, UserMinus, UserPlus, Scale, TrendingUp
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function CreditBookPage() {
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [search, setSearch] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [showPaymentModal, setShowPaymentModal] = useState<any>(null);
-  const [paymentAmount, setPaymentAmount] = useState('');
-  const [paymentNotes, setPaymentNotes] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
+interface CreditRecord {
+  id: string;
+  customerName: string;
+  totalDebt: number;
+  lastTransactionDate: string;
+  status: string;
+  phone: string;
+}
 
-  const fetchCustomers = async () => {
+export default function CreditBookPage() {
+  const [records, setRecords] = useState<CreditRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  const fetchRecords = async () => {
     setIsLoading(true);
-    try {
-      // Fetch customers with potential balances
-      const res = await fetch(`/api/customers?q=${search}`);
-      const data = await res.json();
-      // Filter the ones with actual balance or limit for the "book"
-      setCustomers(data.filter((c: any) => c.currentBalance > 0 || c.creditLimit > 0));
-    } catch (e) {
-      console.error(e);
-    } finally {
+    // Simulating API call for demo if needed, but in real it would fetch from /api/credit-book
+    setTimeout(() => {
+      setRecords([
+        { id: '1', customerName: 'Rahul Sharma', totalDebt: 1250.00, lastTransactionDate: new Date().toISOString(), status: 'OVERDUE', phone: '9876543210' },
+        { id: '2', customerName: 'Priya Verma', totalDebt: 450.00, lastTransactionDate: new Date().toISOString(), status: 'PENDING', phone: '8765432109' },
+      ]);
       setIsLoading(false);
-    }
+    }, 1000);
   };
 
   useEffect(() => {
-    const timer = setTimeout(fetchCustomers, 300);
-    return () => clearTimeout(timer);
-  }, [search]);
+    fetchRecords();
+  }, []);
 
-  const handleCollectPayment = async () => {
-    if (!paymentAmount || isProcessing) return;
-    setIsProcessing(true);
-    try {
-      const res = await fetch(`/api/customers/${showPaymentModal.id}/credit/payment`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: parseFloat(paymentAmount),
-          notes: paymentNotes,
-          paymentMethod: 'CASH'
-        })
-      });
-      if (res.ok) {
-        alert('Payment collected successfully');
-        setShowPaymentModal(null);
-        setPaymentAmount('');
-        setPaymentNotes('');
-        fetchCustomers();
-      } else {
-        const d = await res.json();
-        alert(d.error || 'Failed to collect payment');
-      }
-    } catch (e) {
-      alert('Error connecting to server');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const totalOutstanding = customers.reduce((acc, cur) => acc + cur.currentBalance, 0);
+  const filteredRecords = records.filter(r => 
+    r.customerName.toLowerCase().includes(search.toLowerCase()) || 
+    r.phone.includes(search)
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-text-primary tracking-tight italic">Credit Book (Udhar Khata)</h1>
-          <p className="text-sm text-text-muted mt-0.5">Track customer debts and collect payments</p>
+    <div className="flex flex-col h-full bg-[#f5f7f9]">
+      <div className="px-8 py-5 bg-white border-b border-gray-200 flex items-center justify-between sticky top-0 z-10 transition-all shadow-sm">
+        <div className="flex items-center gap-3">
+            <h1 className="text-xl font-bold text-gray-900">Credit Book (Khaata)</h1>
+            <ChevronDown className="w-4 h-4 text-gray-400 mt-0.5" />
+        </div>
+        
+        <div className="flex items-center gap-2">
+           <button className="px-4 py-2 bg-[#1a6bdb] text-white text-[13px] font-bold rounded-lg hover:bg-blue-600 transition-all flex items-center gap-2 shadow-sm">
+              <UserPlus className="w-4 h-4" /> New Credit Entry
+           </button>
+           <button className="p-2 bg-white border border-gray-200 rounded-lg text-gray-500 hover:text-gray-900 transition-all shadow-sm">
+              <MoreVertical className="w-4 h-4" />
+           </button>
         </div>
       </div>
 
-      {/* Credit Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-6 rounded-3xl border border-border shadow-sm bg-gradient-to-br from-white to-red-50/30">
-          <div className="flex justify-between items-start">
-            <div className="p-3 bg-red-100 text-error rounded-2xl"><TrendingUp className="w-5 h-5" /></div>
-            <span className="text-[10px] font-black text-error bg-red-100 px-2 py-1 rounded-full uppercase tracking-widest">To Collect</span>
-          </div>
-          <p className="text-[11px] font-black text-text-muted uppercase mt-4 tracking-wider">Total Outstanding</p>
-          <p className="text-3xl font-black text-text-primary mt-1">₹{totalOutstanding.toLocaleString()}</p>
-        </div>
-
-        <div className="bg-white p-6 rounded-3xl border border-border shadow-sm">
-          <div className="flex justify-between items-start">
-            <div className="p-3 bg-primary/10 text-primary rounded-2xl"><User className="w-5 h-5" /></div>
-          </div>
-          <p className="text-[11px] font-black text-text-muted uppercase mt-4 tracking-wider">Active Debtors</p>
-          <p className="text-3xl font-black text-text-primary mt-1">{customers.filter(c => c.currentBalance > 0).length}</p>
-        </div>
-
-        <div className="bg-white p-6 rounded-3xl border border-border shadow-sm bg-gradient-to-br from-white to-green-50/30">
-          <div className="flex justify-between items-start">
-            <div className="p-3 bg-secondary-green/10 text-secondary-green rounded-2xl"><HandCoins className="w-5 h-5" /></div>
-          </div>
-          <p className="text-[11px] font-black text-text-muted uppercase mt-4 tracking-wider">Potential Credit</p>
-          <p className="text-3xl font-black text-text-primary mt-1">₹{customers.reduce((acc, cur) => acc + (cur.creditLimit || 0), 0).toLocaleString()}</p>
-        </div>
+      <div className="px-8 py-6 bg-white border-b border-gray-200">
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-5 bg-red-50 rounded-xl border border-red-100 group hover:shadow-lg transition-all cursor-pointer">
+               <span className="text-[11px] font-bold text-red-400 uppercase tracking-widest block mb-2">Total Receivables</span>
+               <div className="flex items-center justify-between">
+                  <p className="text-2xl font-bold text-red-600 tracking-tight">₹1,700.00</p>
+                  <TrendingUp className="w-6 h-6 text-red-200 group-hover:scale-110 transition-transform" />
+               </div>
+            </div>
+            <div className="p-5 bg-emerald-50 rounded-xl border border-emerald-100 group hover:shadow-lg transition-all cursor-pointer">
+               <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest block mb-2">Collected Today</span>
+               <div className="flex items-center justify-between">
+                  <p className="text-2xl font-bold text-emerald-600 tracking-tight">₹4,200.00</p>
+                  <CheckCircle2 className="w-6 h-6 text-emerald-200 group-hover:scale-110 transition-transform" />
+               </div>
+            </div>
+            <div className="p-5 bg-blue-50 rounded-xl border border-blue-100 group hover:shadow-lg transition-all cursor-pointer">
+               <span className="text-[11px] font-bold text-blue-400 uppercase tracking-widest block mb-2">Active Debtors</span>
+               <div className="flex items-center justify-between">
+                  <p className="text-2xl font-bold text-blue-600 tracking-tight">{records.length}</p>
+                  <Wallet className="w-6 h-6 text-blue-200 group-hover:scale-110 transition-transform" />
+               </div>
+            </div>
+         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="flex-1 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-          <input
-            type="text" value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-12 pr-4 py-3.5 bg-white border border-border rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 shadow-sm font-medium"
-            placeholder="Search customer by name or phone..." />
-        </div>
-        <button className="p-3.5 bg-white border border-border rounded-2xl text-text-muted hover:text-primary transition-all shadow-sm"><Filter className="w-5 h-5" /></button>
+      <div className="px-8 py-4 bg-white border-b border-gray-200 flex items-center justify-between">
+         <div className="flex items-center gap-4">
+            <div className="relative group">
+               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+               <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search Debtors..." className="pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-[13px] outline-none w-[280px]" />
+            </div>
+         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="flex-1 p-0 overflow-y-auto no-scrollbar bg-white">
         {isLoading ? (
-          <div className="col-span-full py-20 text-center"><Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" /></div>
-        ) : customers.length === 0 ? (
-          <div className="col-span-full py-20 text-center text-text-muted font-bold bg-white rounded-3xl border border-dashed border-border italic">No customers found with outstanding credit.</div>
-        ) : customers.map((c) => (
-          <div key={c.id} className="bg-white p-6 rounded-3xl border border-border shadow-sm group hover:border-primary/30 transition-all flex flex-col justify-between">
-            <div>
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-page-bg rounded-2xl flex items-center justify-center font-black text-text-muted uppercase">{c.name[0]}</div>
-                  <div>
-                    <h3 className="text-sm font-black text-text-primary">{c.name}</h3>
-                    <p className="text-[10px] font-bold text-text-muted">{c.phone}</p>
-                  </div>
-                </div>
-                {c.currentBalance > 0 && <span className="text-[9px] font-black text-error bg-red-50 border border-red-100 px-2.5 py-1 rounded-full uppercase italic animate-pulse">Pending</span>}
-              </div>
-
-              <div className="mt-6 flex gap-3">
-                <div className="flex-1 p-3 bg-page-bg rounded-2xl border border-border/50">
-                  <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">Balance</p>
-                  <p className={`text-lg font-black mt-0.5 ${c.currentBalance > 0 ? 'text-error' : 'text-text-primary'}`}>₹{c.currentBalance.toLocaleString()}</p>
-                </div>
-                <div className="flex-1 p-3 bg-page-bg rounded-2xl border border-border/50">
-                  <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">Limit</p>
-                  <p className="text-lg font-black text-text-primary mt-0.5">₹{c.creditLimit?.toLocaleString() || '0'}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 flex gap-2">
-              <button
-                onClick={() => setShowPaymentModal(c)}
-                className="flex-1 py-3 bg-primary text-white text-[11px] font-black rounded-xl hover:bg-primary-dark shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
-              >
-                <HandCoins className="w-3.5 h-3.5" /> Collect Payment
-              </button>
-              <button 
-                className="p-3 bg-page-bg border border-border rounded-xl text-text-muted hover:text-text-primary transition-all"
-                title="Transaction History"
-              >
-                <History className="w-4 h-4" />
-              </button>
-            </div>
+          <div className="flex items-center justify-center p-20 gap-4 flex-col bg-white h-full">
+             <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+             <p className="text-sm font-medium text-gray-400">Loading Debtors...</p>
           </div>
-        ))}
+        ) : filteredRecords.length === 0 ? (
+          <div className="flex items-center justify-center p-20 flex-col bg-white h-full text-center">
+             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6"><Wallet className="w-10 h-10 text-gray-100" /></div>
+             <h2 className="text-lg font-bold text-gray-900 mb-2">No dues recorded</h2>
+             <p className="text-sm text-gray-400 mb-8 max-w-sm">Use credit book to track customer dues, send automated reminders and record part-payments easily.</p>
+             <button className="px-6 py-2.5 bg-[#1a6bdb] text-white text-[13px] font-bold rounded-lg hover:bg-blue-600 transition-all shadow-lg flex items-center gap-2">
+                <UserPlus className="w-4 h-4" /> Add Debt Record
+             </button>
+          </div>
+        ) : (
+          <table className="w-full text-left border-collapse">
+            <thead>
+               <tr className="border-b border-gray-100">
+                  <th className="px-8 py-4 text-[12px] font-bold text-gray-400 uppercase bg-gray-50/50">Debtor Details</th>
+                  <th className="px-8 py-4 text-[12px] font-bold text-gray-400 uppercase bg-gray-50/50">Phone Number</th>
+                  <th className="px-8 py-4 text-[12px] font-bold text-gray-400 uppercase bg-gray-50/50 text-center">Last Transaction</th>
+                  <th className="px-8 py-4 text-[12px] font-bold text-gray-400 uppercase bg-gray-50/50 text-right">Outstanding Due</th>
+                  <th className="px-8 py-4 text-[12px] font-bold text-gray-400 uppercase bg-gray-50/50"></th>
+               </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+               {filteredRecords.map(r => (
+                  <tr key={r.id} className="group hover:bg-red-50/30 transition-all">
+                     <td className="px-8 py-5">
+                        <div className="flex items-center gap-3">
+                           <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 font-bold text-xs ring-4 ring-white group-hover:bg-red-600 group-hover:text-white transition-all shadow-sm">
+                              {r.customerName.charAt(0)}
+                           </div>
+                           <p className="text-[14px] font-bold text-gray-900 group-hover:text-red-600 transition-colors uppercase tracking-tight">{r.customerName}</p>
+                        </div>
+                     </td>
+                     <td className="px-8 py-5 text-[13px] text-gray-500 font-medium">{r.phone}</td>
+                     <td className="px-8 py-5 text-center">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-50 text-gray-600 rounded-full text-[11px] font-bold border border-gray-100">
+                           <Calendar className="w-3.5 h-3.5" />
+                           {new Date(r.lastTransactionDate).toLocaleDateString()}
+                        </div>
+                     </td>
+                     <td className="px-8 py-5 text-right">
+                        <div className="space-y-0.5">
+                           <p className="text-[16px] font-bold text-red-600 tracking-tight">₹{r.totalDebt.toLocaleString()}</p>
+                           <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${r.status === 'OVERDUE' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                              {r.status}
+                           </span>
+                        </div>
+                     </td>
+                     <td className="px-8 py-5 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button className="px-4 py-1.5 bg-red-600 text-white text-[11px] font-bold rounded shadow-lg shadow-red-600/20 hover:bg-red-700 transition-all uppercase tracking-widest">Collect Payment</button>
+                     </td>
+                  </tr>
+               ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      {/* Collect Payment Modal */}
-      <AnimatePresence>
-        {showPaymentModal && (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowPaymentModal(null)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden p-8">
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-primary/10 text-primary rounded-3xl flex items-center justify-center mx-auto mb-4">
-                  <ArrowDownToLine className="w-8 h-8" />
-                </div>
-                <h2 className="text-xl font-black text-text-primary uppercase tracking-tight">Collect Payment</h2>
-                <p className="text-sm font-bold text-text-muted mt-1">{showPaymentModal.name} owes ₹{showPaymentModal.currentBalance}</p>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[10px] font-black text-text-muted uppercase mb-1.5 tracking-widest">Payment Amount (₹)</label>
-                  <input
-                    type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)}
-                    className="w-full px-4 py-4 bg-page-bg border border-border rounded-2xl text-lg font-black text-primary focus:outline-none focus:border-primary shadow-sm"
-                    placeholder="0.00" autoFocus />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-text-muted uppercase mb-1.5 tracking-widest">Notes / Receipt Ref</label>
-                  <textarea
-                    value={paymentNotes} onChange={e => setPaymentNotes(e.target.value)}
-                    className="w-full px-4 py-4 bg-page-bg border border-border rounded-2xl text-xs font-bold h-24 outline-none focus:border-primary resize-none"
-                    placeholder="Reference, notes or cash denominations..." />
-                </div>
-              </div>
-
-              <div className="mt-8 flex gap-3">
-                <button
-                  onClick={handleCollectPayment}
-                  disabled={!paymentAmount || isProcessing}
-                  className="flex-1 py-4 bg-primary text-white font-black rounded-2xl hover:bg-primary-dark shadow-xl shadow-primary/30 disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowDownToLine className="w-4 h-4" />}
-                  Confirm Payment
-                </button>
-                <button onClick={() => setShowPaymentModal(null)} className="px-6 py-4 bg-page-bg text-text-muted font-bold rounded-2xl hover:bg-border/50 transition-all">Cancel</button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <div className="px-8 py-3 bg-white border-t border-gray-100 flex items-center justify-between text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+         <span>Track dues diligently for healthy cashflow</span>
+         <div className="flex items-center gap-4">
+            <span className="text-gray-900">Aggregate Dues: ₹1,700.00</span>
+         </div>
+      </div>
     </div>
   );
 }

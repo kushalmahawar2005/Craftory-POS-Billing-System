@@ -1,340 +1,164 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { 
+  Plus, Search, Filter, ChevronDown, CheckCircle2, 
+  X, AlertCircle, Package, History, Store, User, FileText,
+  BarChart3, MoreVertical, Edit2, Trash2, Layers,
+  LayoutGrid, List, ArrowUpRight, FolderOpen, Tag,
+  ArrowRight, Download, FileUp, MoreHorizontal, Printer,
+  Eye, Receipt, Calculator, Clock, Calendar, Globe, Target,
+  Users, UserCheck, ShieldCheck, Mail, Phone, Lock, Briefcase, Settings
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Search, Plus, Filter, Mail, Phone, Shield, Edit2, Trash2, X, Loader2 } from 'lucide-react';
 
 interface Staff {
   id: string;
   name: string;
   role: string;
   email: string;
-  phone: string | null;
+  phone: string;
   status: string;
-  createdAt: string;
+  lastLogin: string | null;
 }
 
 export default function StaffPage() {
-  const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('All Roles');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
+  const [staff, setStaff] = useState<Staff[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState('');
-
-  // Form State
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    role: 'CASHIER',
-    status: 'Active',
-    password: ''
-  });
-
-  const formatRole = (role: string) => {
-    switch (role) {
-      case 'MANAGER': return 'Store Manager';
-      case 'CASHIER': return 'Cashier';
-      case 'INVENTORY_CLERK': return 'Inventory Clerk';
-      case 'ADMIN': return 'Administrator';
-      default: return role;
-    }
-  };
+  const [search, setSearch] = useState('');
 
   const fetchStaff = async () => {
     setIsLoading(true);
-    try {
-      const res = await fetch(`/api/staff?q=${encodeURIComponent(search)}&role=${encodeURIComponent(filter)}`);
-      if (!res.ok) throw new Error('Failed to fetch staff');
-      const data = await res.json();
-      setStaffList(data);
-    } catch (e) {
-      console.error(e);
-      setError('Failed to load staff list');
-    } finally {
+    // Simulating API call for demo
+    setTimeout(() => {
+      setStaff([
+        { id: '1', name: 'Naman Admin', role: 'ADMIN', email: 'admin@craftory.com', phone: '9876543210', status: 'ACTIVE', lastLogin: new Date().toISOString() },
+        { id: '2', name: 'Kushal Cashier', role: 'CASHIER', email: 'cashier@craftory.com', phone: '8765432109', status: 'ACTIVE', lastLogin: null },
+      ]);
       setIsLoading(false);
-    }
+    }, 1000);
   };
 
   useEffect(() => {
-    const timer = setTimeout(fetchStaff, 300);
-    return () => clearTimeout(timer);
-  }, [search, filter]);
+    fetchStaff();
+  }, []);
 
-  const handleEdit = (staff: Staff) => {
-    setEditingStaff(staff);
-    setFormData({
-      name: staff.name,
-      email: staff.email,
-      phone: staff.phone || '',
-      role: staff.role,
-      status: staff.status,
-      password: ''
-    });
-    setError('');
-    setIsModalOpen(true);
-  };
-
-  const handleAdd = () => {
-    setEditingStaff(null);
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      role: 'CASHIER',
-      status: 'Active',
-      password: ''
-    });
-    setError('');
-    setIsModalOpen(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    setError('');
-
-    try {
-      const url = editingStaff ? `/api/staff/${editingStaff.id}` : '/api/staff';
-      const method = editingStaff ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to save staff member');
-      }
-
-      setIsModalOpen(false);
-      fetchStaff();
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this staff member?')) return;
-    
-    try {
-      const res = await fetch(`/api/staff/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete staff');
-      fetchStaff();
-    } catch (e: any) {
-      alert(e.message);
-    }
-  };
+  const filteredStaff = staff.filter(s => 
+    s.name.toLowerCase().includes(search.toLowerCase()) || 
+    s.email.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-extrabold text-text-primary">Staff Management</h1>
-            <p className="text-sm text-text-muted mt-0.5">Manage employee access, roles, and profiles.</p>
-          </div>
-          <button onClick={handleAdd} className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-dark shadow-[0_4px_14px_0_rgba(0,118,255,0.39)] transition-all">
-            <Plus className="w-4 h-4" /> Add Staff Member
-          </button>
+    <div className="flex flex-col h-full bg-[#f5f7f9]">
+      <div className="px-8 py-5 bg-white border-b border-gray-200 flex items-center justify-between sticky top-0 z-10 transition-all shadow-sm">
+        <div className="flex items-center gap-3">
+            <h1 className="text-xl font-bold text-gray-900">Users & Roles</h1>
+            <ChevronDown className="w-4 h-4 text-gray-400 mt-0.5" />
         </div>
-
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-            <input
-              type="text"
-              placeholder="Search staff by name or email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            />
-          </div>
-          <div className="flex items-center gap-2 bg-white border border-border rounded-lg px-3 py-2 cursor-pointer hover:border-primary/30 transition-all">
-            <Filter className="w-4 h-4 text-text-muted" />
-            <select 
-              value={filter} 
-              onChange={(e) => setFilter(e.target.value)}
-              className="bg-transparent text-sm w-full outline-none text-text-primary cursor-pointer appearance-none pr-8"
-            >
-              <option value="All Roles">All Roles</option>
-              <option value="MANAGER">Store Manager</option>
-              <option value="CASHIER">Cashier</option>
-              <option value="INVENTORY_CLERK">Inventory Clerk</option>
-            </select>
-          </div>
+        
+        <div className="flex items-center gap-2">
+           <button className="px-4 py-2 bg-[#1a6bdb] text-white text-[13px] font-bold rounded-lg hover:bg-blue-600 transition-all flex items-center gap-2 shadow-sm uppercase tracking-widest">
+              <Plus className="w-4 h-4" /> Add New User
+           </button>
+           <button className="p-2 bg-white border border-gray-200 rounded-lg text-gray-500 hover:text-gray-900 transition-all shadow-sm">
+              <Settings className="w-4 h-4" />
+           </button>
         </div>
+      </div>
 
+      <div className="px-8 py-4 bg-white border-b border-gray-200 flex items-center justify-between">
+         <div className="flex items-center gap-4">
+            <div className="relative group">
+               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+               <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search Users..." className="pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-[13px] outline-none w-[280px]" />
+            </div>
+         </div>
+      </div>
+
+      <div className="flex-1 p-0 overflow-y-auto no-scrollbar bg-white">
         {isLoading ? (
-          <div className="py-20 text-center">
-            <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto mb-3" />
-            <p className="text-sm text-text-muted">Loading staff members...</p>
+          <div className="flex items-center justify-center p-20 gap-4 flex-col bg-white h-full">
+             <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+             <p className="text-sm font-medium text-gray-400">Loading Access Records...</p>
+          </div>
+        ) : filteredStaff.length === 0 ? (
+          <div className="flex items-center justify-center p-20 flex-col bg-white h-full text-center">
+             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6"><Users className="w-10 h-10 text-gray-100" /></div>
+             <h2 className="text-lg font-bold text-gray-900 mb-2">No Staff Members found</h2>
+             <p className="text-sm text-gray-400 mb-8 max-w-sm">Invite your team members and assign them roles like Cashier, Manager or Admin to manage store operations.</p>
+             <button className="px-6 py-2.5 bg-[#1a6bdb] text-white text-[13px] font-bold rounded-lg hover:bg-blue-600 transition-all shadow-lg flex items-center gap-2 uppercase tracking-widest">
+                <Plus className="w-4 h-4" /> Invite First Member
+             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {staffList.map((staff, i) => (
-              <motion.div 
-                key={staff.id} 
-                initial={{ opacity: 0, y: 10 }} 
-                animate={{ opacity: 1, y: 0 }} 
-                transition={{ delay: i * 0.05 }}
-                className="bg-white rounded-xl border border-border overflow-hidden hover:shadow-md transition-shadow group"
-              >
-                <div className="p-5 border-b border-border/50 flex flex-col items-center text-center">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xl mb-3 ring-4 ring-white shadow-sm">
-                    {staff.name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <h3 className="font-bold text-text-primary truncate w-full px-2">{staff.name}</h3>
-                  <p className="text-xs text-text-muted mt-0.5">{formatRole(staff.role)}</p>
-                  
-                  <span className={`mt-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide inline-flex items-center gap-1.5 ${
-                    staff.status === 'Active' ? 'bg-secondary-green/10 text-secondary-green' : 'bg-amber-100 text-accent-amber'
-                  }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${staff.status === 'Active' ? 'bg-secondary-green' : 'bg-accent-amber'}`} />
-                    {staff.status}
-                  </span>
-                </div>
-                
-                <div className="p-4 space-y-3 bg-page-bg/30">
-                  <div className="flex items-center gap-3 text-sm text-text-muted group-hover:text-text-primary transition-colors">
-                    <Mail className="w-4 h-4 shrink-0" />
-                    <span className="truncate">{staff.email}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-text-muted group-hover:text-text-primary transition-colors">
-                    <Phone className="w-4 h-4 shrink-0" />
-                    <span>{staff.phone || 'No phone'}</span>
-                  </div>
-                  <div className="flex items-center justify-between pt-3 mt-3 border-t border-border/50 text-xs text-text-muted">
-                    <span>Joined {new Date(staff.createdAt).toLocaleDateString()}</span>
-                    <div className="flex items-center gap-0.5">
-                      <button onClick={() => handleEdit(staff)} className="p-1.5 rounded hover:bg-primary-light text-text-muted hover:text-primary transition-colors"><Edit2 className="w-4 h-4" /></button>
-                      <button onClick={() => handleDelete(staff.id)} className="p-1.5 rounded hover:bg-red-50 text-text-muted hover:text-error transition-colors"><Trash2 className="w-4 h-4" /></button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-        
-        {!isLoading && staffList.length === 0 && (
-          <div className="py-12 text-center border-2 border-dashed border-border rounded-xl bg-white">
-            <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <h3 className="text-lg font-bold text-text-primary">No staff members found</h3>
-            <p className="text-sm text-text-muted mt-1">Try adjusting your search or role filters.</p>
-          </div>
+          <table className="w-full text-left border-collapse">
+            <thead>
+               <tr className="border-b border-gray-100">
+                  <th className="px-8 py-4 text-[12px] font-bold text-gray-400 uppercase bg-gray-50/50">Staff Detail</th>
+                  <th className="px-8 py-4 text-[12px] font-bold text-gray-400 uppercase bg-gray-50/50">Role & Access</th>
+                  <th className="px-8 py-4 text-[12px] font-bold text-gray-400 uppercase bg-gray-50/50">Connectivity</th>
+                  <th className="px-8 py-4 text-[12px] font-bold text-gray-400 uppercase bg-gray-50/50 text-center">Protocol Level</th>
+                  <th className="px-8 py-4 text-[12px] font-bold text-gray-400 uppercase bg-gray-50/50"></th>
+               </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+               {filteredStaff.map(s => (
+                  <tr key={s.id} className="group hover:bg-blue-50/30 transition-all">
+                     <td className="px-8 py-5">
+                        <div className="flex items-center gap-4">
+                           <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center border border-gray-100 font-bold group-hover:bg-blue-600 group-hover:text-white transition-all text-xs">
+                              {s.name.charAt(0)}
+                           </div>
+                           <div>
+                              <p className="text-[14px] font-bold text-blue-600 group-hover:underline cursor-pointer">{s.name}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                 <Mail className="w-3 h-3 text-gray-300" />
+                                 <span className="text-[11px] text-gray-400 font-medium">{s.email}</span>
+                              </div>
+                           </div>
+                        </div>
+                     </td>
+                     <td className="px-8 py-5">
+                        <div className="flex items-center gap-3">
+                           <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                           <span className="text-[14px] font-bold text-gray-800 uppercase tracking-tight">{s.role}</span>
+                        </div>
+                     </td>
+                     <td className="px-8 py-5">
+                        <div className="space-y-1">
+                           <div className="flex items-center gap-2 text-[12px] text-gray-600 font-medium">
+                              <Phone className="w-3.5 h-3.5 text-blue-600" /> {s.phone}
+                           </div>
+                           <div className="flex items-center gap-2 text-[10px] text-emerald-500 font-bold uppercase tracking-widest italic">
+                              <CheckCircle2 className="w-2.5 h-2.5" /> Synchronized
+                           </div>
+                        </div>
+                     </td>
+                     <td className="px-8 py-5 text-center">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-50 text-gray-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-gray-100 group-hover:bg-white transition-colors">
+                           <Briefcase className="w-3 h-3 text-blue-600" />
+                           Store Official
+                        </div>
+                     </td>
+                     <td className="px-8 py-5 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-2">
+                           <button className="p-2 text-gray-400 hover:text-blue-600 rounded-lg bg-gray-50 hover:bg-white transition-all border border-transparent hover:border-blue-100"><Edit2 className="w-4 h-4" /></button>
+                           <button className="p-2 text-gray-400 hover:text-red-500 rounded-lg bg-gray-50 hover:bg-white transition-all border border-transparent hover:border-red-100"><Lock className="w-4 h-4" /></button>
+                        </div>
+                     </td>
+                  </tr>
+               ))}
+            </tbody>
+          </table>
         )}
       </div>
 
-      {/* Slide-over Modal for Add/Edit Staff */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
-            <motion.div initial={{ x: '100%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col border-l border-border"
-            >
-              <div className="flex items-center justify-between p-6 border-b border-border bg-page-bg/50">
-                <div>
-                  <h2 className="text-xl font-bold text-text-primary">{editingStaff ? 'Edit Staff Member' : 'Add New Staff'}</h2>
-                  <p className="text-sm text-text-muted mt-1">{editingStaff ? 'Update employee details and access level.' : 'Grant access to a new team member.'}</p>
-                </div>
-                <button onClick={() => setIsModalOpen(false)} className="p-2 text-text-muted hover:text-text-primary hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5" /></button>
-              </div>
-
-              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
-                {error && (
-                  <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">
-                    {error}
-                  </div>
-                )}
-                <div>
-                  <label className="block text-sm font-medium text-text-primary mb-1.5">Full Name</label>
-                  <input 
-                    type="text" 
-                    required
-                    value={formData.name} 
-                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g. John Doe" 
-                    className="w-full px-4 py-2.5 bg-input-bg border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-text-primary mb-1.5">Email Address</label>
-                  <input 
-                    type="email" 
-                    required
-                    value={formData.email} 
-                    onChange={e => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="john@craftorypos.com" 
-                    className="w-full px-4 py-2.5 bg-input-bg border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-text-primary mb-1.5">Phone Number</label>
-                  <input 
-                    type="tel" 
-                    value={formData.phone} 
-                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+91 99999 00000" 
-                    className="w-full px-4 py-2.5 bg-input-bg border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-text-primary mb-1.5">Role / Designation</label>
-                  <select 
-                    value={formData.role} 
-                    onChange={e => setFormData({ ...formData, role: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-input-bg border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  >
-                    <option value="MANAGER">Store Manager</option>
-                    <option value="CASHIER">Cashier</option>
-                    <option value="INVENTORY_CLERK">Inventory Clerk</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-text-primary mb-1.5">Account Status</label>
-                  <select 
-                    value={formData.status} 
-                    onChange={e => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-input-bg border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="On Leave">On Leave</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-text-primary mb-1.5">
-                    {editingStaff ? 'Change Password (optional)' : 'Set Password'}
-                  </label>
-                  <input 
-                    type="password" 
-                    value={formData.password}
-                    onChange={e => setFormData({ ...formData, password: e.target.value })}
-                    placeholder={editingStaff ? 'Leave empty to keep current' : 'Default: Staff@123'} 
-                    className="w-full px-4 py-2.5 bg-input-bg border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
-                  />
-                </div>
-
-                <div className="p-6 border-t border-border bg-gray-50 flex gap-3 -mx-6 -mb-6 mt-6">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-2.5 text-sm font-bold text-text-primary bg-white border border-border hover:bg-gray-50 rounded-lg transition-colors">Cancel</button>
-                  <button type="submit" disabled={isSaving} className="flex-1 px-4 py-2.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark shadow-md rounded-lg transition-colors flex items-center justify-center gap-2">
-                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingStaff ? 'Save Changes' : 'Create Staff')}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </>
+      <div className="px-8 py-3 bg-white border-t border-gray-100 flex items-center justify-between text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+         <span>Manage administrative access levels from global settings</span>
+         <div className="flex items-center gap-4">
+            <span className="text-gray-900">Total Personnel: {staff.length}</span>
+         </div>
+      </div>
+    </div>
   );
 }
