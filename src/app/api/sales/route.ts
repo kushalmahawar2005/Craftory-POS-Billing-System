@@ -61,6 +61,7 @@ export async function POST(req: Request) {
                     items: {
                         create: items.map((item: any) => ({
                             productId: item.productId,
+                            variantId: item.variantId || null,
                             quantity: item.quantity,
                             price: item.price,
                             total: item.quantity * item.price,
@@ -115,6 +116,14 @@ export async function POST(req: Request) {
                     where: { id: item.productId },
                     data: { stockQuantity: { decrement: item.quantity } }
                 });
+
+                // If it's a variant, decrement variant stock too
+                if (item.variantId) {
+                    await tx.productVariant.update({
+                        where: { id: item.variantId },
+                        data: { stockQuantity: { decrement: item.quantity } }
+                    });
+                }
 
                 // Add Inventory Log
                 await tx.inventoryLog.create({

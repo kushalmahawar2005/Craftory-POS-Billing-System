@@ -36,7 +36,15 @@ export async function PUT(
 
     try {
         const data = await req.json();
-        const { name, price, costPrice, stockQuantity, categoryId, barcode, imageUrl, imagePublicId, supplierId } = data;
+        const { 
+            name, price, costPrice, stockQuantity, categoryId, 
+            brandId, unitId, manufacturerId,
+            sku, barcode, reorderLevel, description,
+            taxRate, imageUrl, imagePublicId,
+            frontImageUrl, frontImagePublicId,
+            rearImageUrl, rearImagePublicId,
+            gallery, variants
+        } = data;
 
         // Check ownership
         const existing = await db.product.findUnique({
@@ -51,11 +59,37 @@ export async function PUT(
                 price: price !== undefined ? parseFloat(price) : undefined,
                 costPrice: costPrice !== undefined ? parseFloat(costPrice) : undefined,
                 stockQuantity: stockQuantity !== undefined ? parseInt(stockQuantity) : undefined,
+                taxRate: taxRate !== undefined ? parseFloat(taxRate) : undefined,
                 barcode,
-                imageUrl,
-                imagePublicId,
+                sku,
+                reorderLevel: reorderLevel !== undefined ? parseInt(reorderLevel) : undefined,
+                description,
+                imageUrl: frontImageUrl || imageUrl, // fallback to old fields
+                imagePublicId: frontImagePublicId || imagePublicId,
+                frontImageUrl,
+                frontImagePublicId,
+                rearImageUrl,
+                rearImagePublicId,
                 categoryId,
-                supplierId,
+                brandId,
+                unitId,
+                manufacturerId,
+                variants: variants ? {
+                    deleteMany: {}, // clean replacement for MVP
+                    create: variants.map((v: any) => ({
+                        sku: v.sku,
+                        price: parseFloat(v.price),
+                        stockQuantity: parseInt(v.stock || v.stockQuantity),
+                        attributes: v.attributes
+                    }))
+                } : undefined,
+                gallery: gallery ? {
+                    deleteMany: {}, // replace gallery
+                    create: gallery.map((g: any) => ({
+                        url: g.url,
+                        publicId: g.publicId
+                    }))
+                } : undefined
             }
         });
 

@@ -1,11 +1,13 @@
 import { v2 as cloudinary } from 'cloudinary';
 
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true,
-});
+const configureCloudinary = () => {
+  cloudinary.config({
+    cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
+};
 
 export { cloudinary };
 
@@ -15,10 +17,10 @@ export { cloudinary };
  * @param shopId - The shopId to organize images by folder
  */
 export async function uploadImage(fileBase64: string, shopId: string) {
+  configureCloudinary();
   try {
     const result = await cloudinary.uploader.upload(fileBase64, {
       folder: `craftory/${shopId}/products`,
-      upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'craftory_uploads',
       transformation: [
         { width: 800, quality: 'auto', fetch_format: 'auto', crop: 'limit' }
       ]
@@ -29,8 +31,8 @@ export async function uploadImage(fileBase64: string, shopId: string) {
       publicId: result.public_id
     };
   } catch (error) {
-    console.error('Cloudinary Upload Error:', error);
-    throw new Error('Failed to upload image to Cloudinary');
+    console.error('Detailed Cloudinary Upload Error:', JSON.stringify(error, null, 2), error);
+    throw error; // Throw the actual error so the API can report the specific message
   }
 }
 
@@ -39,6 +41,7 @@ export async function uploadImage(fileBase64: string, shopId: string) {
  * @param publicId - The public ID of the image to delete
  */
 export async function deleteImage(publicId: string) {
+  configureCloudinary();
   try {
     const result = await cloudinary.uploader.destroy(publicId);
     return result;

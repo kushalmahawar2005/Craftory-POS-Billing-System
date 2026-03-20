@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { 
   X, HelpCircle, ChevronDown, Plus, Upload, Package, ArrowRight,
   Info, AlertCircle, Save, RotateCcw, Search, Trash2, Edit2, 
@@ -11,8 +11,10 @@ import {
 import ImageUpload from '@/components/ui/ImageUpload';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function NewProductPage() {
+export default function EditProductPage() {
   const router = useRouter();
+  const params = useParams();
+  const productId = params.id as string;
   
   // Basic states
   const [name, setName] = useState('');
@@ -45,35 +47,42 @@ export default function NewProductPage() {
   
   // Control States
   const [isSaving, setIsSaving] = useState(false);
-  const [itemType, setItemType] = useState<'Single Item' | 'Contains Variants'>('Single Item');
-  
-  // Variants Logic
-  const [attributes, setAttributes] = useState<{ id: string, name: string, values: string[] }[]>([]);
-  const [variants, setVariants] = useState<any[]>([]);
+  const [itemType, setItemType] = useState('Single Item');
+  const [loadingInitial, setLoadingInitial] = useState(true);
 
-  useEffect(() => {
-    if (itemType === 'Contains Variants' && attributes.length > 0) {
-        generateVariants();
-    }
-  }, [attributes, itemType]);
+  const [attributes, setAttributes] = useState<any[]>([]);
+  const [generatedVariants, setGeneratedVariants] = useState<any[]>([]);
 
   const generateVariants = () => {
-    // Cartesian product logic
-    const attrValues = attributes.filter(a => a.values.length > 0).map(a => a.values.map(v => ({ [a.name]: v })));
-    if (attrValues.length === 0) return setVariants([]);
-    
-    const cartesian = attrValues.reduce((a, b) => a.flatMap(d => b.map(e => ({ ...d, ...e }))));
-    
-    setVariants(cartesian.map((v: any, i: number) => ({
-        sku: `${sku}-${i+1}`,
-        price: sellingPrice,
-        stock: openingStock,
-        attributes: v
-    })));
+    if (attributes.length === 0) return;
+    const combinations = attributes.reduce((acc, attr) => {
+      if (attr.values.length === 0) return acc;
+      if (acc.length === 0) return attr.values.map((v: string) => ({ [attr.name]: v }));
+      const next: any[] = [];
+      acc.forEach((a: any) => {
+        attr.values.forEach((v: string) => {
+          next.push({ ...a, [attr.name]: v });
+        });
+      });
+      return next;
+    }, []);
+
+    const newVariants = combinations.map((c: any, i: number) => ({
+      id: `v-${Date.now()}-${i}`,
+      attributes: c,
+      sku: `${sku}-${Object.values(c).join('-').toUpperCase()}`,
+      price: parseFloat(sellingPrice),
+      stockQuantity: 0
+    }));
+    setGeneratedVariants(newVariants);
   };
-  const [loadingInitial, setLoadingInitial] = useState(true);
   
-  // Modals & Search
+  // Modals & Search Inputs
+  const [newCatName, setNewCatName] = useState('');
+  const [newBrandName, setNewBrandName] = useState('');
+  const [newManufacturerName, setNewManufacturerName] = useState('');
+  const [newUnitName, setNewUnitName] = useState('');
+
   const [showManageCategories, setShowManageCategories] = useState(false);
   const [showManageBrands, setShowManageBrands] = useState(false);
   const [showManageManufacturers, setShowManageManufacturers] = useState(false);
@@ -84,35 +93,79 @@ export default function NewProductPage() {
   const [showManufacturerDropdown, setShowManufacturerDropdown] = useState(false);
   const [showUnitDropdown, setShowUnitDropdown] = useState(false);
 
-  // Modal & Search Inputs
-  const [newCatName, setNewCatName] = useState('');
-  const [newBrandName, setNewBrandName] = useState('');
-  const [newManufacturerName, setNewManufacturerName] = useState('');
-  const [newUnitName, setNewUnitName] = useState('');
-
   const [searchCategory, setSearchCategory] = useState('');
   const [searchBrand, setSearchBrand] = useState('');
   const [searchManufacturer, setSearchManufacturer] = useState('');
   const [searchUnit, setSearchUnit] = useState('');
 
   // Initial Data Load
-  const fetchMetadata = async () => {
+  const fetchMetadataAndProduct = async () => {
     try {
-      const [catRes, brandRes, unitRes, manRes] = await Promise.all([
+      const [catRes, brandRes, unitRes, manRes, prodRes] = await Promise.all([
         fetch('/api/categories?flat=true').then(r => r.json()),
         fetch('/api/brands').then(r => r.json()),
         fetch('/api/units').then(r => r.json()),
         fetch('/api/manufacturers').then(r => r.json()),
+        fetch(`/api/products/${productId}`).then(r => r.json())
       ]);
+
       setCategories(Array.isArray(catRes) ? catRes : []);
       setBrands(Array.isArray(brandRes) ? brandRes : []);
       setUnits(Array.isArray(unitRes) ? unitRes : []);
       setManufacturers(Array.isArray(manRes) ? manRes : []);
+
+      if (prodRes && !prodRes.error) {
+        setName(prodRes.name || '');
+        setActiveType(prodRes.itemType || 'Goods');
+        setSku(prodRes.sku || '');
+        setBarcode(prodRes.barcode || '');
+        setSellingPrice(prodRes.price?.toString() || '0.00');
+        setCostPrice(prodRes.costPrice?.toString() || '0.00');
+        setTaxRate(prodRes.taxValue?.toString() || '18');
+        setOpeningStock(prodRes.stockQuantity?.toString() || '0');
+        setReorderLevel(prodRes.reorderLevel?.toString() || '0');
+        setDescription(prodRes.description || '');
+        setFrontImage({ url: prodRes.frontImageUrl || prodRes.imageUrl || '', publicId: prodRes.frontImagePublicId || prodRes.imagePublicId || '' });
+        setRearImage({ url: prodRes.rearImageUrl || '', publicId: prodRes.rearImagePublicId || '' });
+        setGallery(prodRes.gallery || []);
+        
+        // Find selected objects
+        if (prodRes.categoryId) {
+           const cat = Array.isArray(catRes) ? catRes.find((c: any) => c.id === prodRes.categoryId) : null;
+           if (cat) setSelectedCategory(cat);
+        }
+        if (prodRes.brandId) {
+           const br = Array.isArray(brandRes) ? brandRes.find((b: any) => b.id === prodRes.brandId) : null;
+           if (br) setSelectedBrand(br);
+        }
+        if (prodRes.unitId) {
+           const un = Array.isArray(unitRes) ? unitRes.find((u: any) => u.id === prodRes.unitId) : null;
+           if (un) setSelectedUnit(un);
+        }
+        if (prodRes.manufacturerId) {
+           const man = Array.isArray(manRes) ? manRes.find((m: any) => m.id === prodRes.manufacturerId) : null;
+           if (man) setSelectedManufacturer(man);
+        }
+
+        if (prodRes.hasVariants) {
+          setItemType('Contains Variants');
+          setGeneratedVariants(prodRes.variants || []);
+          // Map attributes back from variants if possible (Heuristic for MVP: use unique keys)
+          if (prodRes.variants?.[0]?.attributes) {
+            const keys = Object.keys(prodRes.variants[0].attributes);
+            setAttributes(keys.map(k => ({
+               id: Math.random().toString(),
+               name: k,
+               values: Array.from(new Set(prodRes.variants.map((v: any) => v.attributes[k])))
+            })));
+          }
+        }
+      }
     } catch (e) { console.error('Data load error:', e); }
     finally { setLoadingInitial(false); }
   };
 
-  useEffect(() => { fetchMetadata(); }, []);
+  useEffect(() => { fetchMetadataAndProduct(); }, []);
 
   // Creation Actions
   const handleAddCategory = async () => {
@@ -125,7 +178,8 @@ export default function NewProductPage() {
       });
       if (res.ok) {
         setNewCatName('');
-        await fetchMetadata();
+        const updated = await fetch('/api/categories?flat=true').then(r => r.json());
+        setCategories(Array.isArray(updated) ? updated : []);
       }
     } catch (e) { console.error(e); }
   };
@@ -140,7 +194,8 @@ export default function NewProductPage() {
       });
       if (res.ok) {
         setNewBrandName('');
-        await fetchMetadata();
+        const updated = await fetch('/api/brands').then(r => r.json());
+        setBrands(Array.isArray(updated) ? updated : []);
       }
     } catch (e) { console.error(e); }
   };
@@ -155,7 +210,8 @@ export default function NewProductPage() {
       });
       if (res.ok) {
         setNewManufacturerName('');
-        await fetchMetadata();
+        const updated = await fetch('/api/manufacturers').then(r => r.json());
+        setManufacturers(Array.isArray(updated) ? updated : []);
       }
     } catch (e) { console.error(e); }
   };
@@ -170,7 +226,8 @@ export default function NewProductPage() {
       });
       if (res.ok) {
         setNewUnitName('');
-        await fetchMetadata();
+        const updated = await fetch('/api/units').then(r => r.json());
+        setUnits(Array.isArray(updated) ? updated : []);
       }
     } catch (e) { console.error(e); }
   };
@@ -188,25 +245,28 @@ export default function NewProductPage() {
         reorderLevel: parseInt(reorderLevel), description,
         frontImageUrl: frontImage.url, frontImagePublicId: frontImage.publicId,
         rearImageUrl: rearImage.url, rearImagePublicId: rearImage.publicId,
-        gallery, hasVariants: itemType === 'Contains Variants'
+        gallery, hasVariants: itemType === 'Contains Variants',
+        variants: generatedVariants
       };
 
-      const res = await fetch('/api/products', {
-        method: 'POST',
+      const res = await fetch(`/api/products/${productId}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error('Save failed');
+      if (!res.ok) throw new Error('Update failed');
       router.push('/app/products');
-    } catch (e) { alert('Failed to save'); }
+    } catch (e) { alert('Failed to update product'); }
     finally { setIsSaving(false); }
   };
+
+  if (loadingInitial) return <div className="p-20 text-center"><Loader2 className="w-10 h-10 animate-spin mx-auto text-blue-600" /><p className="mt-4 text-gray-400">Loading Product...</p></div>;
 
   return (
     <div className="min-h-screen bg-[#f5f7f9] text-[#1e2128]">
       {/* HEADER */}
       <header className="fixed top-0 right-0 left-0 lg:left-[298px] z-50 h-[60px] bg-white border-b border-gray-200 flex items-center justify-between px-10 shadow-sm">
-        <h1 className="text-xl font-bold text-gray-800 uppercase tracking-widest">New Item</h1>
+        <h1 className="text-xl font-bold text-gray-800 uppercase tracking-widest flex items-center gap-3"><Edit2 className="w-5 h-5 text-blue-600" /> Edit Item</h1>
         <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-900 transition-all p-3 rounded-full hover:bg-gray-100">
            <X className="w-5 h-5" />
         </button>
@@ -219,7 +279,7 @@ export default function NewProductPage() {
              <div className="col-span-12 lg:col-span-7 space-y-10">
                 <div className="flex items-start gap-10">
                    <label className="w-32 shrink-0 text-[13px] font-bold text-red-500 mt-2.5">Name*</label>
-                   <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Entry item name" className="flex-1 px-4 py-2 border border-gray-200 rounded text-[14px] focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all outline-none" />
+                   <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Entry item name" className="flex-1 px-4 py-2 border border-gray-200 rounded text-[14px] focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all outline-none font-bold text-gray-900" />
                 </div>
                 <div className="flex items-center gap-10">
                    <label className="w-32 shrink-0 text-[13px] font-bold text-gray-500 flex items-center gap-1">Type <HelpCircle className="w-3.5 h-3.5 text-gray-300" /></label>
@@ -302,6 +362,7 @@ export default function NewProductPage() {
                       </AnimatePresence>
                    </div>
                 </div>
+
                 <div className="flex items-center gap-10">
                    <label className="w-32 shrink-0 text-[13px] font-bold text-gray-500">Unit</label>
                    <div className="flex-1 relative">
@@ -328,6 +389,7 @@ export default function NewProductPage() {
                       </AnimatePresence>
                    </div>
                 </div>
+
                 <div className="grid grid-cols-2 gap-10">
                    <div className="flex items-center gap-10">
                       <label className="w-32 shrink-0 text-[13px] font-bold text-gray-500">SKU</label>
@@ -338,6 +400,7 @@ export default function NewProductPage() {
                       <input type="text" value={barcode} onChange={e => setBarcode(e.target.value)} className="flex-1 px-4 py-2 border border-gray-100 rounded text-[14px] outline-none" placeholder="Scan Barcode" />
                    </div>
                 </div>
+
                 <div className="flex items-center gap-10">
                    <label className="w-32 shrink-0 text-[13px] font-bold text-gray-500">Manufacturer</label>
                    <div className="flex-1 relative">
@@ -373,6 +436,7 @@ export default function NewProductPage() {
                    </div>
                 </div>
              </div>
+             
              <div className="col-span-12 lg:col-span-5">
                 <div className="border border-gray-100 rounded-2xl p-8 bg-gray-50/20 grid grid-cols-2 gap-6 relative">
                    <div className="space-y-6">
@@ -385,15 +449,22 @@ export default function NewProductPage() {
                          <ImageUpload width="w-full" height="aspect-square" currentImage={rearImage.url} onUpload={(url, pid) => setRearImage({ url, publicId: pid })} onDelete={() => setRearImage({ url: '', publicId: '' })} />
                       </div>
                    </div>
-                   <div className="space-y-2">
-                      <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Gallery</p>
-                      <div className="h-[calc(100%-2rem)]">
-                         <ImageUpload width="w-full" height="h-full" onUpload={(url, pid) => setGallery(prev => [...prev, { url, publicId: pid }])} />
+                   <div className="space-y-2 text-center">
+                      <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2">Gallery</p>
+                      <div className="grid grid-cols-1 gap-4 overflow-y-auto no-scrollbar max-h-[400px]">
+                         {gallery.map((img, idx) => (
+                           <div key={idx} className="relative group">
+                              <img src={img.url} className="w-full aspect-square object-cover rounded-xl border border-gray-100" />
+                              <button onClick={() => setGallery(prev => prev.filter((_, i) => i !== idx))} className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+                           </div>
+                         ))}
+                         <ImageUpload width="w-full" height="aspect-square" onUpload={(url, pid) => setGallery(prev => [...prev, { url, publicId: pid }])} />
                       </div>
                    </div>
                 </div>
              </div>
           </div>
+
           <div className="space-y-10 border-t border-gray-100 pt-16">
              <div className="flex items-center justify-between">
                 <h3 className="text-[12px] font-black text-gray-900 border-l-[4px] border-blue-600 pl-4 uppercase tracking-[0.2em]">Inventory Type</h3>
@@ -406,7 +477,7 @@ export default function NewProductPage() {
                 </div>
              </div>
 
-             {itemType === 'Contains Variants' && (
+             {itemType === 'Contains Variants' ? (
                 <div className="pl-6 space-y-10 animate-in fade-in slide-in-from-top-4 duration-500">
                    <div className="space-y-6">
                       <div className="flex items-center justify-between">
@@ -417,7 +488,7 @@ export default function NewProductPage() {
                       </div>
 
                       <div className="space-y-4">
-                         {attributes.map((attr, idx) => (
+                         {attributes.map((attr: any, idx: number) => (
                             <div key={attr.id} className="flex items-start gap-4 p-6 bg-gray-50/50 rounded-xl border border-gray-100">
                                <div className="w-1/3">
                                   <input type="text" value={attr.name} onChange={e => {
@@ -428,11 +499,11 @@ export default function NewProductPage() {
                                </div>
                                <div className="flex-1 space-y-2">
                                   <div className="flex flex-wrap gap-2">
-                                     {attr.values.map((v, vIdx) => (
+                                     {attr.values.map((v: string, vIdx: number) => (
                                         <span key={vIdx} className="px-3 py-1 bg-blue-100 text-blue-600 text-[11px] font-bold rounded-lg flex items-center gap-2">
                                            {v} <button onClick={() => {
                                               const n = [...attributes];
-                                              n[idx].values = n[idx].values.filter((_, i) => i !== vIdx);
+                                              n[idx].values = n[idx].values.filter((_, i: number) => i !== vIdx);
                                               setAttributes(n);
                                            }}><X className="w-3 h-3 text-blue-400 hover:text-blue-600" /></button>
                                         </span>
@@ -448,58 +519,64 @@ export default function NewProductPage() {
                                               e.currentTarget.value = '';
                                            }
                                         }
-                                     }} placeholder="Type and press Enter" className="bg-transparent border-none outline-none text-[13px] font-medium py-1" />
+                                     }} placeholder="Type value and hit Enter" className="bg-transparent border-none outline-none text-[13px] font-bold py-1" />
                                   </div>
                                </div>
-                               <button onClick={() => setAttributes(attributes.filter((_, i) => i !== idx))} className="p-2 text-gray-300 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
+                               <button onClick={() => setAttributes(attributes.filter((_, i: number) => i !== idx))} className="p-2 text-gray-300 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
                             </div>
                          ))}
                       </div>
+
+                      {attributes.length > 0 && (
+                         <button onClick={generateVariants} className="w-full py-4 border-2 border-dashed border-gray-100 rounded-xl text-[11px] font-black text-gray-400 uppercase tracking-widest hover:border-blue-200 hover:text-blue-600 transition-all">
+                            Generate Variants Matrix
+                         </button>
+                      )}
                    </div>
 
-                   {variants.length > 0 && (
-                      <div className="space-y-4">
-                         <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Generated Variants ({variants.length})</p>
-                         <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                            <table className="w-full text-left border-collapse">
-                               <thead className="bg-gray-50">
-                                  <tr>
-                                     <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Variant</th>
-                                     <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">SKU</th>
-                                     <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Price</th>
-                                     <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Stock</th>
+                   {generatedVariants.length > 0 && (
+                      <div className="space-y-6">
+                         <p className="text-[13px] font-bold text-gray-900 uppercase tracking-widest italic">Variant Matrix ({generatedVariants.length} Combinations)</p>
+                         <div className="border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                            <table className="w-full text-left">
+                               <thead className="bg-gray-50/50">
+                                  <tr className="border-b border-gray-100">
+                                     <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Variant</th>
+                                     <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">SKU</th>
+                                     <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Price</th>
+                                     <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Stock</th>
                                   </tr>
                                </thead>
                                <tbody className="divide-y divide-gray-50">
-                                  {variants.map((v, idx) => (
-                                     <tr key={idx} className="hover:bg-blue-50/20 transition-all">
-                                        <td className="px-6 py-3">
-                                           <div className="flex flex-wrap gap-1">
+                                  {generatedVariants.map((v: any, vIdx: number) => (
+                                     <tr key={v.id} className="hover:bg-blue-50/30 transition-all">
+                                        <td className="px-6 py-4">
+                                           <div className="flex gap-1 flex-wrap">
                                               {Object.entries(v.attributes).map(([k, val]) => (
-                                                 <span key={k} className="text-[11px] font-bold text-gray-900 bg-gray-100 px-2 py-0.5 rounded">{val as string}</span>
+                                                 <span key={k} className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-bold rounded uppercase">{val as string}</span>
                                               ))}
                                            </div>
                                         </td>
-                                        <td className="px-6 py-3">
+                                        <td className="px-6 py-4">
                                            <input type="text" value={v.sku} onChange={e => {
-                                              const n = [...variants];
-                                              n[idx].sku = e.target.value;
-                                              setVariants(n);
-                                           }} className="w-full bg-transparent border-none outline-none text-[13px] font-bold text-blue-600" />
+                                              const n = [...generatedVariants];
+                                              n[vIdx].sku = e.target.value;
+                                              setGeneratedVariants(n);
+                                           }} className="w-full bg-transparent border-none outline-none text-[11px] font-bold text-gray-900" />
                                         </td>
-                                        <td className="px-6 py-3">
+                                        <td className="px-6 py-4">
                                            <input type="number" value={v.price} onChange={e => {
-                                              const n = [...variants];
-                                              n[idx].price = e.target.value;
-                                              setVariants(n);
-                                           }} className="w-24 bg-transparent border-none outline-none text-[13px] font-bold text-gray-900" />
+                                              const n = [...generatedVariants];
+                                              n[vIdx].price = parseFloat(e.target.value);
+                                              setGeneratedVariants(n);
+                                           }} className="w-24 bg-transparent border-none outline-none text-[11px] font-bold text-blue-600" />
                                         </td>
-                                        <td className="px-6 py-3">
-                                           <input type="number" value={v.stock} onChange={e => {
-                                              const n = [...variants];
-                                              n[idx].stock = e.target.value;
-                                              setVariants(n);
-                                           }} className="w-20 bg-transparent border-none outline-none text-[13px] font-bold text-gray-900" />
+                                        <td className="px-6 py-4">
+                                           <input type="number" value={v.stockQuantity} onChange={e => {
+                                              const n = [...generatedVariants];
+                                              n[vIdx].stockQuantity = parseInt(e.target.value);
+                                              setGeneratedVariants(n);
+                                           }} className="w-20 bg-transparent border-none outline-none text-[11px] font-bold text-gray-900" />
                                         </td>
                                      </tr>
                                   ))}
@@ -509,35 +586,34 @@ export default function NewProductPage() {
                       </div>
                    )}
                 </div>
+             ) : (
+                <div className="grid grid-cols-2 gap-x-20 gap-y-10 pl-6 animate-in fade-in duration-500">
+                  <div className="flex items-center gap-10">
+                     <label className="w-32 shrink-0 text-[13px] font-bold text-red-500">Selling Price*</label>
+                     <div className="flex-1 flex group shadow-sm">
+                        <span className="px-4 py-2 bg-gray-100 border border-r-0 border-gray-200 rounded-l text-[10px] font-black text-gray-500 uppercase">INR</span>
+                        <input type="text" value={sellingPrice} onChange={e => setSellingPrice(e.target.value)} className="flex-1 px-4 py-2 border border-gray-200 rounded-r text-[16px] font-black text-gray-900 outline-none text-right focus:border-blue-500 transition-all" />
+                     </div>
+                  </div>
+                  <div className="flex items-center gap-10 px-8">
+                     <label className="w-32 shrink-0 text-[13px] font-bold text-gray-500">Cost Price</label>
+                     <div className="flex-1 flex group shadow-sm">
+                        <span className="px-4 py-2 bg-gray-100 border border-r-0 border-gray-200 rounded-l text-[10px] font-black text-gray-500 uppercase">INR</span>
+                        <input type="text" value={costPrice} onChange={e => setCostPrice(e.target.value)} className="flex-1 px-4 py-2 border border-gray-200 rounded-r text-[16px] font-black text-gray-900 outline-none text-right focus:border-blue-500 transition-all" />
+                     </div>
+                  </div>
+                  <div className="flex items-center gap-10">
+                     <label className="w-32 shrink-0 text-[13px] font-bold text-gray-500">Current Stock</label>
+                     <input type="number" value={openingStock} onChange={e => setOpeningStock(e.target.value)} className="flex-1 px-4 py-2 border border-gray-200 rounded text-[15px] font-bold text-gray-800 outline-none focus:border-blue-500 transition-all" />
+                  </div>
+                  <div className="flex items-center gap-10 px-8">
+                     <label className="w-32 shrink-0 text-[13px] font-bold text-gray-500">Reorder Alert</label>
+                     <input type="number" value={reorderLevel} onChange={e => setReorderLevel(e.target.value)} className="flex-1 px-4 py-2 border border-gray-200 rounded text-[15px] font-bold text-gray-800 outline-none focus:border-blue-500 transition-all" />
+                  </div>
+               </div>
              )}
           </div>
-          <div className="space-y-10 border-t border-gray-100 pt-16">
-             <h3 className="text-[12px] font-black text-gray-900 border-l-[4px] border-blue-600 pl-4 uppercase tracking-[0.2em]">Pricing & Inventory</h3>
-             <div className="grid grid-cols-2 gap-x-20 gap-y-10 pl-6">
-                <div className="flex items-center gap-10">
-                   <label className="w-32 shrink-0 text-[13px] font-bold text-red-500">Selling Price*</label>
-                   <div className="flex-1 flex group shadow-sm">
-                      <span className="px-4 py-2 bg-gray-100 border border-r-0 border-gray-200 rounded-l text-[10px] font-black text-gray-500 uppercase">INR</span>
-                      <input type="text" value={sellingPrice} onChange={e => setSellingPrice(e.target.value)} className="flex-1 px-4 py-2 border border-gray-200 rounded-r text-[16px] font-black text-gray-900 outline-none text-right focus:border-blue-500 transition-all" />
-                   </div>
-                </div>
-                <div className="flex items-center gap-10 px-8">
-                   <label className="w-32 shrink-0 text-[13px] font-bold text-gray-500">Cost Price</label>
-                   <div className="flex-1 flex group shadow-sm">
-                      <span className="px-4 py-2 bg-gray-100 border border-r-0 border-gray-200 rounded-l text-[10px] font-black text-gray-500 uppercase">INR</span>
-                      <input type="text" value={costPrice} onChange={e => setCostPrice(e.target.value)} className="flex-1 px-4 py-2 border border-gray-200 rounded-r text-[16px] font-black text-gray-900 outline-none text-right focus:border-blue-500 transition-all" />
-                   </div>
-                </div>
-                <div className="flex items-center gap-10">
-                   <label className="w-32 shrink-0 text-[13px] font-bold text-gray-500">Opening Stock</label>
-                   <input type="number" value={openingStock} onChange={e => setOpeningStock(e.target.value)} className="flex-1 px-4 py-2 border border-gray-200 rounded text-[15px] font-bold text-gray-800 outline-none focus:border-blue-500 transition-all" />
-                </div>
-                <div className="flex items-center gap-10 px-8">
-                   <label className="w-32 shrink-0 text-[13px] font-bold text-gray-500">Reorder Alert</label>
-                   <input type="number" value={reorderLevel} onChange={e => setReorderLevel(e.target.value)} className="flex-1 px-4 py-2 border border-gray-200 rounded text-[15px] font-bold text-gray-800 outline-none focus:border-blue-500 transition-all" />
-                </div>
-             </div>
-          </div>
+
           <div className="space-y-10 border-t border-gray-100 pt-16">
              <h3 className="text-[12px] font-black text-gray-900 border-l-[4px] border-blue-600 pl-4 uppercase tracking-[0.2em]">Item Manifest</h3>
              <div className="flex items-start gap-10 pl-6">
@@ -549,17 +625,18 @@ export default function NewProductPage() {
       </main>
 
       {/* FOOTER */}
-      <footer className="fixed bottom-0 right-0 left-0 lg:left-[298px] z-[70] h-[75px] bg-white border-t border-gray-200 px-10 flex items-center shadow-xl">
+      <footer className="fixed bottom-0 right-0 left-0 lg:left-[298px] z-[70] h-[75px] bg-white border-t border-gray-200 px-10 flex items-center justify-between shadow-xl">
          <div className="flex items-center gap-4">
             <button onClick={handleSave} disabled={isSaving} className="px-12 py-3 bg-[#1a6bdb] text-white text-[13px] font-black rounded shadow-xl shadow-blue-600/20 hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center gap-3 uppercase tracking-widest">
                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-               Save Item
+               Update Item
             </button>
             <button onClick={() => router.back()} className="px-12 py-3 bg-white border border-gray-200 text-gray-600 text-[13px] font-black rounded hover:bg-gray-50 transition-all uppercase tracking-widest">Cancel</button>
          </div>
+         <button className="flex items-center gap-2 text-red-500 text-[11px] font-black uppercase tracking-widest hover:bg-red-50 px-4 py-2 rounded-lg transition-all"><Trash2 className="w-4 h-4" /> Delete Item</button>
       </footer>
 
-      {/* MODALS: CATEGORY */}
+      {/* MODALS */}
       <AnimatePresence>
         {showManageCategories && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center">
@@ -601,7 +678,6 @@ export default function NewProductPage() {
         )}
       </AnimatePresence>
 
-      {/* MODALS: BRANDS */}
       <AnimatePresence>
         {showManageBrands && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center">
@@ -643,14 +719,13 @@ export default function NewProductPage() {
         )}
       </AnimatePresence>
 
-      {/* MODALS: MANUFACTURERS */}
       <AnimatePresence>
         {showManageManufacturers && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center">
              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowManageManufacturers(false)} className="absolute inset-0 bg-black/50 backdrop-blur-md" />
-             <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="relative w-full max-w-[500px] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col mx-4 font-sans">
-                <div className="px-8 py-5 border-b border-gray-100 flex items-center justify-between bg-white">
-                   <h2 className="text-[13px] font-black text-gray-800 uppercase tracking-widest flex items-center gap-2 font-sans">
+             <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="relative w-full max-w-[500px] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col mx-4">
+                <div className="px-8 py-5 border-b border-gray-100 flex items-center justify-between bg-white font-sans text-sans">
+                   <h2 className="text-[13px] font-black text-gray-800 uppercase tracking-widest flex items-center gap-2">
                       <Store className="w-4 h-4 text-blue-600" /> Manage Manufacturers
                    </h2>
                    <button onClick={() => setShowManageManufacturers(false)} className="text-gray-400 hover:text-gray-900 transition-colors"><X className="w-5 h-5" /></button>
@@ -658,20 +733,20 @@ export default function NewProductPage() {
                 <div className="p-8 grow overflow-y-auto no-scrollbar bg-gray-50/20">
                    <div className="bg-white p-6 rounded-lg border border-gray-100 shadow-sm mb-8">
                       <div className="space-y-4">
-                         <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest block font-sans">New Manufacturer Name*</label>
-                         <div className="flex gap-2 font-sans">
+                         <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest block">New Manufacturer Name*</label>
+                         <div className="flex gap-2">
                             <input type="text" value={newManufacturerName} onChange={e => setNewManufacturerName(e.target.value)} className="flex-1 px-4 py-2.5 border border-gray-200 rounded outline-none focus:border-blue-500 text-[14px] font-bold text-gray-700 placeholder:font-normal placeholder:text-gray-300" placeholder="e.g. Samsung" />
                             <button onClick={handleAddManufacturer} className="px-6 py-2.5 bg-[#1a6bdb] text-white text-[11px] font-black rounded shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all uppercase tracking-widest whitespace-nowrap">Add</button>
                          </div>
                       </div>
                    </div>
-                   <div className="space-y-2 font-sans">
+                   <div className="space-y-2">
                       <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-4">Manufacturer Directory ({manufacturers.length})</p>
                       <div className="max-h-[300px] overflow-y-auto no-scrollbar divide-y divide-gray-50 border border-gray-100 rounded-lg bg-white overflow-hidden">
                          {manufacturers.map(m => (
                             <div key={m.id} className="group flex items-center justify-between px-6 py-3.5 hover:bg-gray-50 transition-all">
                                <span className="text-[13px] font-bold text-gray-700">{m.name}</span>
-                               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all font-sans">
+                               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
                                   <button onClick={() => { setSelectedManufacturer(m); setShowManageManufacturers(false); }} className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded uppercase tracking-wider hover:bg-blue-600 hover:text-white transition-all">Select</button>
                                   <button className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                                </div>
@@ -685,37 +760,36 @@ export default function NewProductPage() {
         )}
       </AnimatePresence>
 
-      {/* MODALS: UNITS */}
       <AnimatePresence>
         {showManageUnits && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center">
              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowManageUnits(false)} className="absolute inset-0 bg-black/50 backdrop-blur-md" />
              <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="relative w-full max-w-[500px] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col mx-4">
-                <div className="px-8 py-5 border-b border-gray-100 flex items-center justify-between bg-white font-sans">
-                   <h2 className="text-[13px] font-black text-gray-800 uppercase tracking-widest flex items-center gap-2 font-sans">
+                <div className="px-8 py-5 border-b border-gray-100 flex items-center justify-between bg-white">
+                   <h2 className="text-[13px] font-black text-gray-800 uppercase tracking-widest flex items-center gap-2">
                       <Layers className="w-4 h-4 text-blue-600" /> Manage Units
                    </h2>
                    <button onClick={() => setShowManageUnits(false)} className="text-gray-400 hover:text-gray-900 transition-colors"><X className="w-5 h-5" /></button>
                 </div>
-                <div className="p-8 grow overflow-y-auto no-scrollbar bg-gray-50/20 font-sans">
-                   <div className="bg-white p-6 rounded-lg border border-gray-100 shadow-sm mb-8 font-sans">
-                      <div className="space-y-4 font-sans">
-                         <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest block font-sans">New Unit Name*</label>
+                <div className="p-8 grow overflow-y-auto no-scrollbar bg-gray-50/20">
+                   <div className="bg-white p-6 rounded-lg border border-gray-100 shadow-sm mb-8">
+                      <div className="space-y-4">
+                         <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest block">New Unit Name*</label>
                          <div className="flex gap-2">
-                            <input type="text" value={newUnitName} onChange={e => setNewUnitName(e.target.value)} className="flex-1 px-4 py-2.5 border border-gray-200 rounded outline-none focus:border-blue-500 text-[14px] font-bold text-gray-700 placeholder:font-normal placeholder:text-gray-300 font-sans" placeholder="e.g. Box" />
+                            <input type="text" value={newUnitName} onChange={e => setNewUnitName(e.target.value)} className="flex-1 px-4 py-2.5 border border-gray-200 rounded outline-none focus:border-blue-500 text-[14px] font-bold text-gray-700 placeholder:font-normal placeholder:text-gray-300" placeholder="e.g. Box" />
                             <button onClick={handleAddUnit} className="px-6 py-2.5 bg-[#1a6bdb] text-white text-[11px] font-black rounded shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all uppercase tracking-widest whitespace-nowrap">Add</button>
                          </div>
                       </div>
                    </div>
-                   <div className="space-y-2 font-sans">
-                      <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-4">Unit List ({units.length}) font-sans</p>
-                      <div className="max-h-[300px] overflow-y-auto no-scrollbar divide-y divide-gray-50 border border-gray-100 rounded-lg bg-white overflow-hidden font-sans font-sans">
+                   <div className="space-y-2">
+                      <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-4">Unit Directory ({units.length})</p>
+                      <div className="max-h-[300px] overflow-y-auto no-scrollbar divide-y divide-gray-50 border border-gray-100 rounded-lg bg-white overflow-hidden">
                          {units.map(u => (
-                            <div key={u.id} className="group flex items-center justify-between px-6 py-3.5 hover:bg-gray-50 transition-all font-sans font-sans font-sans">
-                               <span className="text-[13px] font-bold text-gray-700 font-sans font-sans font-sans">{u.name}</span>
-                               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all font-sans">
-                                  <button onClick={() => { setSelectedUnit(u); setShowManageUnits(false); }} className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded uppercase tracking-wider hover:bg-blue-600 hover:text-white transition-all font-sans">Select</button>
-                                  <button className="p-1.5 text-gray-300 hover:text-red-500 transition-colors font-sans"><Trash2 className="w-3.5 h-3.5 font-sans" /></button>
+                            <div key={u.id} className="group flex items-center justify-between px-6 py-3.5 hover:bg-gray-50 transition-all">
+                               <span className="text-[13px] font-bold text-gray-700">{u.name}</span>
+                               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                  <button onClick={() => { setSelectedUnit(u); setShowManageUnits(false); }} className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded uppercase tracking-wider hover:bg-blue-600 hover:text-white transition-all">Select</button>
+                                  <button className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                                </div>
                             </div>
                          ))}
