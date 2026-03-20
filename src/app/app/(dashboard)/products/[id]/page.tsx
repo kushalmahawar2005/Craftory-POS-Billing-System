@@ -437,29 +437,35 @@ export default function EditProductPage() {
                 </div>
              </div>
              
-             <div className="col-span-12 lg:col-span-5">
-                <div className="border border-gray-100 rounded-2xl p-8 bg-gray-50/20 grid grid-cols-2 gap-6 relative">
-                   <div className="space-y-6">
-                      <div className="space-y-2">
-                         <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Front View</p>
-                         <ImageUpload width="w-full" height="aspect-square" currentImage={frontImage.url} onUpload={(url, pid) => setFrontImage({ url, publicId: pid })} onDelete={() => setFrontImage({ url: '', publicId: '' })} />
+             <div className="col-span-12 lg:col-span-5 relative">
+                <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm space-y-6 sticky top-24">
+                   <div className="space-y-4">
+                      <div className="flex items-center justify-between px-1">
+                         <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                            <ImageIcon className="w-4 h-4 text-blue-600" /> Primary Product Image
+                         </h3>
+                         {frontImage.url && <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full uppercase tracking-tighter shadow-sm">Live on POS</span>}
                       </div>
-                      <div className="space-y-2">
-                         <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Rear View</p>
-                         <ImageUpload width="w-full" height="aspect-square" currentImage={rearImage.url} onUpload={(url, pid) => setRearImage({ url, publicId: pid })} onDelete={() => setRearImage({ url: '', publicId: '' })} />
+                      
+                      <div className="relative group">
+                         <div className="absolute -inset-1 bg-gradient-to-tr from-blue-500/10 to-transparent rounded-[2rem] blur opacity-0 group-hover:opacity-100 transition duration-500" />
+                         <div className="relative shadow-xl shadow-blue-500/5 rounded-2xl overflow-hidden hover:scale-[1.01] transition-all">
+                            <ImageUpload 
+                               width="w-full" 
+                               height="aspect-square" 
+                               currentImage={frontImage.url} 
+                               onUpload={(url, pid) => setFrontImage({ url, publicId: pid })} 
+                               onDelete={() => setFrontImage({ url: '', publicId: '' })} 
+                            />
+                         </div>
                       </div>
                    </div>
-                   <div className="space-y-2 text-center">
-                      <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2">Gallery</p>
-                      <div className="grid grid-cols-1 gap-4 overflow-y-auto no-scrollbar max-h-[400px]">
-                         {gallery.map((img, idx) => (
-                           <div key={idx} className="relative group">
-                              <img src={img.url} className="w-full aspect-square object-cover rounded-xl border border-gray-100" />
-                              <button onClick={() => setGallery(prev => prev.filter((_, i) => i !== idx))} className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
-                           </div>
-                         ))}
-                         <ImageUpload width="w-full" height="aspect-square" onUpload={(url, pid) => setGallery(prev => [...prev, { url, publicId: pid }])} />
-                      </div>
+
+                   <div className="bg-blue-50/40 p-5 rounded-2xl border border-blue-50/50 flex gap-4">
+                      <div className="w-1.5 bg-blue-500/20 rounded-full shrink-0" />
+                      <p className="text-[10px] font-bold text-blue-900/60 leading-relaxed uppercase tracking-normal">
+                          Note: This image will be the primary visual for this item on the POS Billing screen. Use a high-quality 1:1 photo for the best appearance.
+                      </p>
                    </div>
                 </div>
              </div>
