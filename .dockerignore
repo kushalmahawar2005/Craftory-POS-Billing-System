@@ -4,7 +4,7 @@ node_modules
 .github
 *.log
 .env
-.env.local
+.env.local 
 .env.*.local
 dist
 build
