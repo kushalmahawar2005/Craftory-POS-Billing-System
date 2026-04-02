@@ -421,6 +421,12 @@ enum Role {
   INVENTORY_CLERK
 }
 
+model BusinessType {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
 model SaleReturn {
   id           String           @id @default(cuid())
   returnNumber String           @unique

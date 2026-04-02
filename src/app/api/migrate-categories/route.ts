@@ -53,7 +53,6 @@ export async function GET(req: Request) {
         await db.shop.update({
             where: { id: session.shopId },
             data: { 
-                businessTypeId: businessType.id,
                 businessType: businessType.name
             }
         });
@@ -84,7 +83,6 @@ export async function GET(req: Request) {
                 data: {
                     name: catName,
                     shopId: session.shopId,
-                    businessTypeId: businessType.id,
                     icon: 'Package',
                     color: '#7C3AED',
                     status: 'ACTIVE',
