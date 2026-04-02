@@ -87,8 +87,13 @@ export async function POST(req: Request) {
       phone: cleanedPhone,
       message: 'Account created. OTP sent to your phone.',
     });
-  } catch (error) {
-    console.error('Signup Error:', error);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Signup Error - FULL LOG:', {
+        message: error.message,
+        stack: error.stack,
+        code: error.code,
+        meta: error.meta
+    });
+    return NextResponse.json({ success: false, error: `Internal server error: ${error.message || 'Unknown error'}` }, { status: 500 });
   }
 }
