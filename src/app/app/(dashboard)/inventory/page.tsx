@@ -77,40 +77,40 @@ export default function InventoryPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-black text-text-primary tracking-tight">Stock Inventory</h1>
-          <p className="text-sm text-text-muted mt-0.5">{products.length} products · Total Value: ₹{totalValue.toLocaleString('en-IN')}</p>
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <h1 className="text-lg font-semibold text-gray-800">Stock Inventory</h1>
+          <span className="text-sm text-gray-400">({products.length})</span>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setShowAlerts(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-border text-text-primary text-sm font-bold rounded-xl hover:bg-gray-50 transition-all">
-            <Bell className={`w-4 h-4 ${lowStockCount + outStockCount > 0 ? 'text-accent-amber fill-accent-amber animate-pulse' : ''}`} /> Stock Alerts
+            className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+            <Bell className={`w-3.5 h-3.5 ${lowStockCount + outStockCount > 0 ? 'text-orange-500' : ''}`} /> Alerts
           </button>
           <button onClick={() => window.location.href = '/app/products'}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all">
-            <Plus className="w-4 h-4" /> Manage Products
+            className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors">
+            <Plus className="w-4 h-4" /> Add Items
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
         {[
-          { label: 'Total Products', value: products.length, icon: Package, color: 'text-primary bg-primary/10' },
-          { label: 'Low Stock Products', value: lowStockCount, icon: AlertTriangle, color: 'text-accent-amber bg-accent-amber/10' },
-          { label: 'Out of Stock', value: outStockCount, icon: TrendingDown, color: 'text-error bg-error/10' },
+          { label: 'Total Products', value: products.length, icon: Package, color: 'text-blue-500 bg-blue-50' },
+          { label: 'Low Stock', value: lowStockCount, icon: AlertTriangle, color: 'text-orange-500 bg-orange-50' },
+          { label: 'Out of Stock', value: outStockCount, icon: TrendingDown, color: 'text-red-500 bg-red-50' },
+          { label: 'Total Value', value: `₹${totalValue.toLocaleString('en-IN')}`, icon: Package, color: 'text-purple-500 bg-purple-50' },
         ].map((stat, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-            className="bg-white rounded-2xl p-5 border border-border shadow-sm flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${stat.color}`}>
-              <stat.icon className="w-6 h-6" />
+          <div key={i} className="bg-white rounded-lg p-4 border border-gray-200 flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.color}`}>
+              <stat.icon className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-2xl font-black text-text-primary">{stat.value}</p>
-              <p className="text-xs font-bold text-text-muted uppercase tracking-wider">{stat.label}</p>
+              <p className="text-xl font-bold text-gray-800">{stat.value}</p>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{stat.label}</p>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 

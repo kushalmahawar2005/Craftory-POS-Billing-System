@@ -40,6 +40,15 @@ body {
 /* Smooth scrolling */
 html { scroll-behavior: smooth; }
 
+/* Hide scrollbar utility */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
 /* Focus styles */
 *:focus-visible {
   outline: 2px solid var(--color-primary);
@@ -50,4 +59,29 @@ html { scroll-behavior: smooth; }
 ::selection {
   background: var(--color-primary-light);
   color: var(--color-primary-dark);
+}
+
+/* Intercept / Utility Classes */
+.no-scrollbar::-webkit-scrollbar,
+.zero-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar,
+.zero-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
 }

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthSession } from '@/lib/auth';
+import path from 'path';
+import fs from 'fs';
 
 // PUT: Save onboarding step data
 export async function PUT(req: Request) {
@@ -15,26 +17,43 @@ export async function PUT(req: Request) {
             return NextResponse.json({ error: 'Step number is required' }, { status: 400 });
         }
 
-        // Step 1: Store Profile
+        // Step 1: Business Profile
         if (step === 1) {
-            const { businessName, businessType, address, city, state, pincode, language } = data;
-
-            // Update Shop name & business type
+            const { businessName, businessType, ownerName, phone, email } = data;
             await db.shop.update({
                 where: { id: session.shopId },
                 data: {
                     shopName: businessName || undefined,
                     businessType: businessType || undefined,
-                    language: language || 'English',
+                    ownerName: ownerName || undefined,
+                    phone: phone || undefined,
+                    email: email || undefined,
                 },
             });
+            return NextResponse.json({ success: true, message: 'Business profile saved' });
+        }
 
-            // Update Store address details
+        // Step 2: GST Details
+        if (step === 2) {
+            const { gstRegistered, gstin, defaultGSTRate } = data;
+            await db.shop.update({
+                where: { id: session.shopId },
+                data: {
+                    gstRegistered: gstRegistered === 'Yes' || gstRegistered === true,
+                    gstin: gstin || null,
+                    defaultGSTRate: defaultGSTRate ? parseFloat(defaultGSTRate) : 18,
+                },
+            });
+            return NextResponse.json({ success: true, message: 'GST details saved' });
+        }
+
+        // Step 3: Store Address
+        if (step === 3) {
+            const { address, city, state, pincode } = data;
             if (session.storeId) {
                 await db.store.update({
                     where: { id: session.storeId },
                     data: {
-                        name: businessName || undefined,
                         address: address || undefined,
                         city: city || undefined,
                         state: state || undefined,
@@ -43,67 +62,95 @@ export async function PUT(req: Request) {
                     },
                 });
             }
-
-            return NextResponse.json({ success: true, message: 'Store profile saved' });
+            return NextResponse.json({ success: true, message: 'Store address saved' });
         }
 
-        // Step 2: Tax / GST Settings
-        if (step === 2) {
-            const { gstRegistered, gstin, registrationType, legalName, tradeName, registeredOn } = data;
-
+        // Step 4: Preferences
+        if (step === 4) {
+            const { currency, timezone, language, fiscalYearStart } = data;
             await db.shop.update({
                 where: { id: session.shopId },
                 data: {
-                    gstRegistered: gstRegistered === 'Yes',
-                    gstin: gstin || null,
-                    gstRegistrationType: registrationType || null,
-                    gstLegalName: legalName || null,
-                    gstTradeName: tradeName || null,
-                    gstRegisteredOn: registeredOn ? new Date(registeredOn) : null,
+                    currency: currency || 'INR',
+                    timezone: timezone || 'Asia/Kolkata',
+                    language: language || 'English',
+                    fiscalYearStart: fiscalYearStart || 'APRIL',
                 },
             });
-
-            return NextResponse.json({ success: true, message: 'Tax settings saved' });
-        }
-
-        // Step 5: Preferences
-        if (step === 5) {
-            const { enableDiscounts, additionalCharges, soundNotifications, emailNotifications, invoicePdf } = data;
-
-            await db.shopPreferences.upsert({
-                where: { shopId: session.shopId },
-                update: {
-                    enableDiscounts: enableDiscounts ?? true,
-                    additionalCharges: additionalCharges ?? true,
-                    soundNotifications: soundNotifications ?? true,
-                    emailNotifications: emailNotifications ?? false,
-                    invoicePdf: invoicePdf ?? false,
-                },
-                create: {
-                    shopId: session.shopId,
-                    enableDiscounts: enableDiscounts ?? true,
-                    additionalCharges: additionalCharges ?? true,
-                    soundNotifications: soundNotifications ?? true,
-                    emailNotifications: emailNotifications ?? false,
-                    invoicePdf: invoicePdf ?? false,
-                },
-            });
-
             return NextResponse.json({ success: true, message: 'Preferences saved' });
         }
 
-        // Step 6: Complete Onboarding
+        // Step 5: POS Settings
+        if (step === 5) {
+            const { receiptTemplate, paperSize, defaultPaymentMethod } = data;
+            if (session.storeId) {
+                await db.store.update({
+                    where: { id: session.storeId },
+                    data: {
+                        receiptTemplate: receiptTemplate || undefined,
+                        paperSize: paperSize || '80mm',
+                        defaultPaymentMethod: defaultPaymentMethod || 'CASH',
+                    },
+                });
+            }
+            return NextResponse.json({ success: true, message: 'POS settings saved' });
+        }
+
+        // Step 6: Complete Onboarding & Auto-Seed Categories
         if (step === 6) {
             await db.shop.update({
                 where: { id: session.shopId },
                 data: { onboardingCompleted: true },
             });
 
-            return NextResponse.json({ success: true, message: 'Onboarding completed!' });
+            // Auto-seed categories if none exist
+            const categoryCount = await db.category.count({ where: { shopId: session.shopId } });
+            if (categoryCount === 0) {
+                const shop = await db.shop.findUnique({
+                    where: { id: session.shopId },
+                    select: { businessType: true }
+                });
+
+                const businessType = shop?.businessType || 'General Store';
+                const seedDataPath = path.join(process.cwd(), 'src/lib/data/categories.json');
+                
+                try {
+                    const fileContent = fs.readFileSync(seedDataPath, 'utf8');
+                    const allSeedData = JSON.parse(fileContent);
+                    
+                    // Match businessType from JSON (case-insensitive)
+                    let matchedType = allSeedData.businessTypes.find(
+                        (bt: any) => bt.type.toLowerCase() === businessType.toLowerCase()
+                    );
+                    
+                    // Fallback to General Store if no match
+                    if (!matchedType) {
+                        matchedType = allSeedData.businessTypes.find((bt: any) => bt.type === 'General Store');
+                    }
+
+                    if (matchedType && matchedType.categories) {
+                        for (const catName of matchedType.categories) {
+                            await db.category.create({
+                                data: {
+                                    name: catName,
+                                    icon: 'Package',
+                                    color: '#7C3AED',
+                                    shopId: session.shopId,
+                                    level: 0,
+                                    status: 'ACTIVE'
+                                }
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.error('Seeding Error:', err);
+                }
+            }
+
+            return NextResponse.json({ success: true, message: 'Onboarding completed successfully!' });
         }
 
-        // Steps 3 & 4 are navigation-only (redirect to Products/Purchase pages)
-        return NextResponse.json({ success: true, message: 'Step acknowledged' });
+        return NextResponse.json({ error: 'Invalid step' }, { status: 400 });
 
     } catch (error) {
         console.error('Onboarding Error:', error);
@@ -137,26 +184,31 @@ export async function GET() {
             step1: {
                 businessName: shop.shopName,
                 businessType: shop.businessType || '',
-                address: store?.address || '',
-                city: store?.city || '',
-                state: store?.state || '',
-                pincode: store?.pincode || '',
-                language: shop.language || 'English',
+                ownerName: shop.ownerName,
+                phone: shop.phone || '',
+                email: shop.email,
             },
             step2: {
                 gstRegistered: shop.gstRegistered ? 'Yes' : 'No',
                 gstin: shop.gstin || '',
-                registrationType: shop.gstRegistrationType || '',
-                legalName: shop.gstLegalName || '',
-                tradeName: shop.gstTradeName || '',
-                registeredOn: shop.gstRegisteredOn ? shop.gstRegisteredOn.toISOString().split('T')[0] : '',
+                defaultGSTRate: shop.defaultGSTRate || 18,
+            },
+            step3: {
+                address: store?.address || '',
+                city: store?.city || '',
+                state: store?.state || '',
+                pincode: store?.pincode || '',
+            },
+            step4: {
+                currency: shop.currency || 'INR',
+                timezone: shop.timezone || 'Asia/Kolkata',
+                language: shop.language || 'English',
+                fiscalYearStart: shop.fiscalYearStart || 'APRIL',
             },
             step5: {
-                enableDiscounts: shop.preferences?.enableDiscounts ?? true,
-                additionalCharges: shop.preferences?.additionalCharges ?? true,
-                soundNotifications: shop.preferences?.soundNotifications ?? true,
-                emailNotifications: shop.preferences?.emailNotifications ?? false,
-                invoicePdf: shop.preferences?.invoicePdf ?? false,
+                receiptTemplate: store?.receiptTemplate || '',
+                paperSize: store?.paperSize || '80mm',
+                defaultPaymentMethod: store?.defaultPaymentMethod || 'CASH',
             },
         });
     } catch (error) {

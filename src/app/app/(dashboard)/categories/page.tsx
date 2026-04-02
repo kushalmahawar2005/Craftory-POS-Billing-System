@@ -2,134 +2,42 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  ChevronRight, ChevronDown, Plus, MoreVertical, 
-  Search, RefreshCw, FolderPlus, Grid3X3, List,
-  Smartphone, Laptop, Shirt, Gem, Home, Wrench, 
-  Zap, PenTool, BookOpen, Dumbbell, Car, Sprout, 
-  PawPrint, Utensils, Box, Truck, ShoppingCart, 
-  Coffee, Cookie, Milk, Apple, User, Sparkles, 
-  Baby, Activity, Trash2, Edit2
+  Plus, Search, Filter, ChevronDown, CheckCircle2, 
+  X, AlertCircle, Package, History, Store, User, FileText,
+  BarChart3, MoreVertical, Edit2, Trash2, Layers,
+  LayoutGrid, List, ArrowUpRight, FolderOpen, Tag,
+  ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import React from 'react';
 
-// Icon Map for Category Icons
-const IconMap: Record<string, any> = {
-  ShoppingCart, Coffee, Cookie, Milk, Apple, User, 
-  Sparkles, Baby, Activity, Smartphone, Laptop, 
-  Shirt, Gem, Home, Wrench, Zap, PenTool, BookOpen, 
-  Dumbbell, Car, Sprout, PawPrint, Utensils, Box, 
-  Truck, FolderPlus, Grid3X3, List
-};
-
-const CategoryNode = ({ 
-  category, 
-  level = 0, 
-  expanded, 
-  onToggle, 
-  onAddSub 
-}: { 
-  category: any; 
-  level?: number; 
-  expanded: Record<string, boolean>; 
-  onToggle: (id: string) => void; 
-  onAddSub: (id: string) => void;
-}) => {
-  const isExpanded = expanded[category.id];
-  const hasChildren = category.children && category.children.length > 0;
-  
-  return (
-    <div className={`rounded-xl overflow-hidden transition-all ${level === 0 ? 'bg-white border border-gray-200 shadow-sm mb-4' : 'ml-6 mt-2'}`}>
-      <div 
-        className={`flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 group ${level > 0 ? 'border-l-2 border-blue-200 bg-white/50' : ''}`}
-        onClick={() => hasChildren && onToggle(category.id)}
-      >
-        <div className="flex items-center gap-3">
-          {level === 0 && (
-            <div className="p-2 rounded-lg" style={{ backgroundColor: `${category.color}15`, color: category.color || '#3b82f6' }}>
-              {IconMap[category.icon || 'Grid3X3'] ? React.createElement(IconMap[category.icon || 'Grid3X3'], { className: 'w-5 h-5' }) : <Grid3X3 className="w-5 h-5" />}
-            </div>
-          )}
-          {level > 0 && (
-            <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mr-1 shadow-[0_0_8px_rgba(59,130,246,0.3)]" />
-          )}
-          <div>
-            <h3 className={`font-bold ${level === 0 ? 'text-gray-900' : 'text-sm text-gray-700'}`}>{category.name}</h3>
-            {level === 0 && (
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                {category.children?.length || 0} SECTIONS • {category._count?.products || 0} PRODUCTS
-              </p>
-            )}
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity gap-1">
-             <button 
-               onClick={(e) => { e.stopPropagation(); onAddSub(category.id); }}
-               className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
-             >
-               <Plus className="w-4 h-4" />
-             </button>
-             <button className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded">
-               <Edit2 className="w-4 h-4" />
-             </button>
-             <button className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded">
-               <Trash2 className="w-4 h-4" />
-             </button>
-          </div>
-          {hasChildren ? (
-            <div className="ml-2">
-              {isExpanded ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
-            </div>
-          ) : <div className="w-6" />}
-        </div>
-      </div>
-
-      <AnimatePresence>
-        {isExpanded && hasChildren && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="pb-2 pr-2"
-          >
-            {category.children.map((child: any) => (
-              <CategoryNode 
-                key={child.id} 
-                category={child} 
-                level={level + 1} 
-                expanded={expanded} 
-                onToggle={onToggle}
-                onAddSub={onAddSub}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
+interface Category {
+  id: string;
+  name: string;
+  description: string | null;
+  _count: { products: number };
+}
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [searchQuery, setSearchQuery] = useState('');
-  const [seeding, setSeeding] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatDesc, setNewCatDesc] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const fetchCategories = async (seed = false) => {
+  const fetchCategories = async () => {
+    setIsLoading(true);
     try {
-      setLoading(true);
-      const res = await fetch(`/api/categories${seed ? '?seed=true' : ''}`);
-      const data = await res.json();
-      setCategories(data);
-    } catch (error) {
-      console.error('Failed to fetch categories:', error);
+      const res = await fetch('/api/categories');
+      if (res.ok) {
+        const data = await res.json();
+        setCategories(data);
+      }
+    } catch (e) {
+      console.error(e);
     } finally {
-      setLoading(false);
-      setSeeding(false);
+      setIsLoading(false);
     }
   };
 
@@ -137,129 +45,152 @@ export default function CategoriesPage() {
     fetchCategories();
   }, []);
 
-  const toggleExpand = (id: string) => {
-    setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const handleSeed = async () => {
-    setSeeding(true);
-    await fetchCategories(true);
-  };
-
-  const handleReset = async () => {
-    if (confirm('Are you sure you want to reset all categories? This will re-seed industry-standard categories including deep hierarchies.')) {
-      setLoading(true);
-      try {
-        const res = await fetch('/api/categories', { method: 'POST' });
-        const data = await res.json();
-        if (data.success) {
-          await fetchCategories();
-        } else {
-          alert('Reset failed: ' + data.error);
-        }
-      } catch (err) {
-        alert('Error resetting system');
-      } finally {
-        setLoading(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCatName) return;
+    setSaving(true);
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCatName, description: newCatDesc }),
+      });
+      if (res.ok) {
+        setIsModalOpen(false);
+        setNewCatName('');
+        setNewCatDesc('');
+        fetchCategories();
       }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSaving(false);
     }
   };
 
-  const recursiveSearch = (cats: any[]): any[] => {
-    return cats.filter(cat => {
-      const matchSelf = cat.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchChildren = cat.children && recursiveSearch(cat.children).length > 0;
-      return matchSelf || matchChildren;
-    });
-  };
-
-  const filteredCategories = searchQuery ? recursiveSearch(categories) : categories;
+  const filteredCategories = categories.filter(c => 
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="flex flex-col h-full bg-[#fbfbfb]">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
-        <div>
-          <h1 className="text-xl font-bold text-[#111]">Product Categories</h1>
-          <p className="text-xs text-gray-500 font-medium">Manage your multi-level product hierarchy</p>
-        </div>
+    <div className="flex flex-col h-full bg-[#f5f7f9]">
+      <div className="px-8 py-5 bg-white border-b border-gray-200 flex items-center justify-between sticky top-0 z-10 transition-all">
         <div className="flex items-center gap-3">
-          <button 
-            onClick={handleReset}
-            className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm font-semibold hover:bg-red-100 transition-all"
-          >
-            <Trash2 className="w-4 h-4" />
-            Reset System
-          </button>
-          <button 
-            onClick={handleSeed}
-            disabled={seeding || categories.length > 0}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm ${
-              categories.length > 0 
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-              : 'bg-white border border-blue-200 text-blue-600 hover:bg-blue-50'
-            }`}
-          >
-            <RefreshCw className={`w-4 h-4 ${seeding ? 'animate-spin' : ''}`} />
-            {seeding ? 'Seeding...' : 'Seed Industry Categories'}
-          </button>
-          <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200">
-            <Plus className="w-4 h-4" />
-            New Category
-          </button>
+            <h1 className="text-xl font-bold text-gray-900">Item Groups</h1>
+            <ChevronDown className="w-4 h-4 text-gray-400 mt-0.5" />
+        </div>
+        
+        <div className="flex items-center gap-2">
+           <button onClick={() => setIsModalOpen(true)} className="px-4 py-2 bg-[#1a6bdb] text-white text-[13px] font-bold rounded-lg hover:bg-blue-600 transition-all flex items-center gap-2 shadow-sm">
+              <Plus className="w-4 h-4" /> New Group
+           </button>
+           <button className="p-2 bg-white border border-gray-200 rounded-lg text-gray-500 hover:text-gray-900 transition-all shadow-sm">
+              <MoreVertical className="w-4 h-4" />
+           </button>
         </div>
       </div>
 
-      <div className="p-6 overflow-y-auto">
-        {/* Search */}
-        <div className="mb-6">
-          <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Search categories (e.g. 'Gold', 'Rings')..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:border-blue-400 focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-medium"
-            />
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <RefreshCw className="w-8 h-8 text-blue-500 animate-spin mb-4" />
-            <p className="text-sm text-gray-500 font-medium">Crunching your categories...</p>
-          </div>
-        ) : categories.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
-            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-              <Grid3X3 className="w-8 h-8 text-blue-500" />
+      <div className="px-8 py-4 bg-white border-b border-gray-200 flex items-center justify-between">
+         <div className="flex items-center gap-4">
+            <div className="relative group">
+               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+               <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search Groups..." className="pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-[13px] outline-none w-[280px]" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900">No Categories Found</h3>
-            <p className="text-sm text-gray-500 mb-6 max-w-sm text-center">
-              You haven't added any categories yet. Click the button below to seed industry categories.
-            </p>
-            <button 
-              onClick={handleSeed}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
-            >
-              Seed Industry Categories
-            </button>
+         </div>
+      </div>
+
+      <div className="flex-1 p-0 overflow-y-auto no-scrollbar bg-white">
+        {isLoading ? (
+          <div className="flex items-center justify-center p-20 gap-4 flex-col bg-white h-full">
+             <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+             <p className="text-sm font-medium text-gray-400">Loading Groups...</p>
+          </div>
+        ) : filteredCategories.length === 0 ? (
+          <div className="flex items-center justify-center p-20 flex-col bg-white h-full text-center">
+             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6"><Layers className="w-10 h-10 text-gray-100" /></div>
+             <h2 className="text-lg font-bold text-gray-900 mb-2">No Item Groups found</h2>
+             <p className="text-sm text-gray-400 mb-8 max-w-sm">Use item groups to organize your products into logical collections like Electronics, Furniture, etc.</p>
+             <button onClick={() => setIsModalOpen(true)} className="px-6 py-2.5 bg-[#1a6bdb] text-white text-[13px] font-bold rounded-lg hover:bg-blue-600 transition-all shadow-lg flex items-center gap-2">
+                <Plus className="w-4 h-4" /> New Item Group
+             </button>
           </div>
         ) : (
-          <div className="max-w-5xl mx-auto">
-            {filteredCategories.map((category) => (
-              <CategoryNode 
-                key={category.id} 
-                category={category} 
-                expanded={expanded} 
-                onToggle={toggleExpand}
-                onAddSub={() => {}}
-              />
-            ))}
-          </div>
+          <table className="w-full text-left">
+            <thead>
+               <tr className="border-b border-gray-100">
+                  <th className="px-8 py-4 text-[12px] font-bold text-gray-400 uppercase bg-gray-50/50">Group Name</th>
+                  <th className="px-8 py-4 text-[12px] font-bold text-gray-400 uppercase bg-gray-50/50">Description</th>
+                  <th className="px-8 py-4 text-[12px] font-bold text-gray-400 uppercase bg-gray-50/50 text-center">Product Count</th>
+                  <th className="px-8 py-4 text-[12px] font-bold text-gray-400 uppercase bg-gray-50/50"></th>
+               </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+               {filteredCategories.map(c => (
+                  <tr key={c.id} className="group hover:bg-blue-50/30 transition-all">
+                     <td className="px-8 py-5">
+                        <div className="flex items-center gap-4">
+                           <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-100 group-hover:bg-white transition-colors"><FolderOpen className="w-5 h-5 text-gray-300" /></div>
+                           <div>
+                              <p className="text-[14px] font-bold text-blue-600 group-hover:underline cursor-pointer">{c.name}</p>
+                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">ID: {c.id.slice(-6)}</span>
+                           </div>
+                        </div>
+                     </td>
+                     <td className="px-8 py-5 text-[13px] text-gray-500 max-w-xs truncate">{c.description || 'No description'}</td>
+                     <td className="px-8 py-5 text-center">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-50 text-gray-600 rounded-lg text-[12px] font-bold border border-gray-100 shadow-sm transition-colors group-hover:bg-white group-hover:border-blue-100">
+                           <Package className="w-3.5 h-3.5 text-blue-600" />
+                           {c._count.products} Items
+                        </div>
+                     </td>
+                     <td className="px-8 py-5 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-2">
+                           <button className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-white transition-all shadow-sm"><Edit2 className="w-4 h-4" /></button>
+                           <button className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-white transition-all shadow-sm"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                     </td>
+                  </tr>
+               ))}
+            </tbody>
+          </table>
         )}
       </div>
+
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)} className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+            <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="relative bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+               <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/30">
+                  <div className="flex items-center gap-3">
+                     <div className="w-10 h-10 bg-[#1a6bdb] rounded-xl flex items-center justify-center text-white"><Plus className="w-6 h-6" /></div>
+                     <h2 className="text-lg font-bold text-gray-900 leading-none">New Item Group</h2>
+                  </div>
+                  <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-all text-gray-400"><X className="w-6 h-6" /></button>
+               </div>
+               
+               <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                  <div>
+                     <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Group Name *</label>
+                     <input autoFocus type="text" value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="e.g., Electronics" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold text-gray-900 focus:bg-white focus:border-blue-600 transition-all outline-none" required />
+                  </div>
+                  <div>
+                     <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Description</label>
+                     <textarea value={newCatDesc} onChange={e => setNewCatDesc(e.target.value)} placeholder="Describe what this group contains..." className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold text-gray-900 focus:bg-white focus:border-blue-600 transition-all outline-none resize-none h-24" />
+                  </div>
+                  
+                  <div className="flex items-center gap-4 pt-4 border-t border-gray-50">
+                     <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3.5 bg-gray-50 text-gray-400 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-gray-100 transition-all">Cancel</button>
+                     <button type="submit" disabled={saving || !newCatName} className="flex-[2] py-3.5 bg-[#1a6bdb] text-white font-bold text-xs uppercase tracking-[0.2em] rounded-xl hover:bg-blue-600 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 flex items-center justify-center gap-3">
+                        {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                        {saving ? 'Creating...' : 'Save Group'}
+                     </button>
+                  </div>
+               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

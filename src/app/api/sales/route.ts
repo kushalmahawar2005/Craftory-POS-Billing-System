@@ -53,6 +53,7 @@ export async function POST(req: Request) {
                     discount: discount || 0,
                     total,
                     paymentMethod,
+                    status: paymentMethod === 'CREDIT' ? 'DUE' : 'PAID',
                     shopId: session.shopId,
                     storeId: session.storeId,
                     staffId: session.userId,
@@ -60,6 +61,7 @@ export async function POST(req: Request) {
                     items: {
                         create: items.map((item: any) => ({
                             productId: item.productId,
+                            variantId: item.variantId || null,
                             quantity: item.quantity,
                             price: item.price,
                             total: item.quantity * item.price,
@@ -69,6 +71,44 @@ export async function POST(req: Request) {
                 include: { items: true }
             });
 
+            // 2.1 Handle Credit Transaction if payment method is CREDIT
+            if (paymentMethod === 'CREDIT') {
+                if (!finalCustomerId) throw new Error('Customer is required for credit sales');
+                
+                const customer = await tx.customer.findUnique({ where: { id: finalCustomerId } });
+                if (!customer) throw new Error('Customer not found');
+
+                // Check credit limit
+                if (customer.creditLimit > 0 && customer.currentBalance + total > customer.creditLimit) {
+                    throw new Error(`Credit limit exceeded. Current: ₹${customer.currentBalance}, Limit: ₹${customer.creditLimit}`);
+                }
+
+                const balanceBefore = customer.currentBalance;
+                const balanceAfter = balanceBefore + total;
+
+                await tx.creditTransaction.create({
+                    data: {
+                        customerId: finalCustomerId,
+                        shopId: session.shopId,
+                        type: 'SALE_ON_CREDIT',
+                        amount: total,
+                        balanceBefore,
+                        balanceAfter,
+                        saleId: sale.id,
+                        notes: `Credit sale: ${invoiceNumber}`,
+                        processedBy: session.userId,
+                    }
+                });
+
+                await tx.customer.update({
+                    where: { id: finalCustomerId },
+                    data: {
+                        currentBalance: balanceAfter,
+                        totalCreditGiven: { increment: total }
+                    }
+                });
+            }
+
             // 3. Process each item (Stock Update + Logs)
             for (const item of items) {
                 // Update product stock
@@ -76,6 +116,14 @@ export async function POST(req: Request) {
                     where: { id: item.productId },
                     data: { stockQuantity: { decrement: item.quantity } }
                 });
+
+                // If it's a variant, decrement variant stock too
+                if (item.variantId) {
+                    await tx.productVariant.update({
+                        where: { id: item.variantId },
+                        data: { stockQuantity: { decrement: item.quantity } }
+                    });
+                }
 
                 // Add Inventory Log
                 await tx.inventoryLog.create({

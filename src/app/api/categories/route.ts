@@ -11,34 +11,56 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const flat = searchParams.get('flat') === 'true';
     const seed = searchParams.get('seed') === 'true';
+    const type = searchParams.get('type'); // New: return recommended cats for a type
 
     try {
+        const seedDataPath = path.join(process.cwd(), 'src/lib/data/categories.json');
+        const fileData = JSON.parse(fs.readFileSync(seedDataPath, 'utf8'));
+        const businessTypes = fileData.businessTypes || [];
+
+        // Support for returning recommendation only
+        if (type) {
+            let matched = businessTypes.find((bt: any) => bt.type.toLowerCase() === type.toLowerCase());
+            if (!matched) matched = businessTypes.find((bt: any) => bt.type === "General Store");
+            return NextResponse.json(matched || { type: 'None', categories: [] });
+        }
+
         if (seed) {
-            const existingCount = await db.category.count({ where: { shopId: session.shopId } });
-            if (existingCount === 0) {
-                const seedDataPath = path.join(process.cwd(), 'src/lib/data/categories.json');
-                const seedData = JSON.parse(fs.readFileSync(seedDataPath, 'utf8'));
-                
-                const seedRecursive = async (items: any[], parentId: string | null = null, level: number = 0) => {
-                    for (const item of items) {
-                        const created = await db.category.create({
+            const shop = await db.shop.findUnique({
+                where: { id: session.shopId },
+                select: { businessType: true }
+            });
+
+            const businessType = shop?.businessType || 'General Store';
+            
+            // Find matched type or fallback to General Store
+            let matched = businessTypes.find((bt: any) => bt.type.toLowerCase() === businessType.toLowerCase());
+            if (!matched) {
+                matched = businessTypes.find((bt: any) => bt.type === "General Store");
+            }
+
+            if (matched && matched.categories) {
+                // Get existing categories to avoid duplicates
+                const existing = await db.category.findMany({
+                    where: { shopId: session.shopId },
+                    select: { name: true }
+                });
+                const existingNames = new Set(existing.map((e: { name: string }) => e.name));
+
+                for (const catName of matched.categories) {
+                    if (!existingNames.has(catName)) {
+                        await db.category.create({
                             data: {
-                                name: item.name,
-                                icon: item.icon || 'Category',
-                                color: item.color || '#94a3b8',
-                                shopId: session.shopId,
-                                parentId: parentId,
-                                level: level,
-                                status: 'ACTIVE'
+                                name: catName,
+                                icon: 'Package',
+                                color: '#7C3AED',
+                                status: 'ACTIVE',
+                                level: 0,
+                                shop: { connect: { id: session.shopId } }
                             }
                         });
-
-                        if (item.children && Array.isArray(item.children) && item.children.length > 0) {
-                            await seedRecursive(item.children, created.id, level + 1);
-                        }
                     }
-                };
-                await seedRecursive(seedData);
+                }
             }
         }
 
@@ -86,9 +108,12 @@ export async function GET(req: Request) {
         const hierarchy = buildTree(null);
         return NextResponse.json(hierarchy);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('[CATEGORIES_GET_ERROR]', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({ 
+            error: 'Internal server error', 
+            details: error.message
+        }, { status: 500 });
     }
 }
 
@@ -97,46 +122,69 @@ export async function POST(req: Request) {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     try {
-        // Force Reset & Seed logic for POST
-        // 1. Clear existing
-        await db.category.deleteMany({
-            where: { shopId: session.shopId }
+        const body = await req.json().catch(() => ({}));
+        const { name, businessType: overrideType, reset = false } = body;
+
+        // NEW: Handle Manual Creation
+        if (name) {
+            const category = await db.category.create({
+                data: {
+                    name,
+                    shopId: session.shopId,
+                    status: 'ACTIVE',
+                    level: 0
+                }
+            });
+            return NextResponse.json(category);
+        }
+
+        // EXISTING: Seed logic (if no name provided)
+        if (reset) {
+            await db.category.deleteMany({ where: { shopId: session.shopId } });
+        }
+
+        const shop = await db.shop.findUnique({
+            where: { id: session.shopId },
+            select: { businessType: true }
         });
 
-        // 2. Read JSON
+        const businessType = overrideType || shop?.businessType || 'General Store';
         const seedDataPath = path.join(process.cwd(), 'src/lib/data/categories.json');
-        const seedData = JSON.parse(fs.readFileSync(seedDataPath, 'utf8'));
+        const fileData = JSON.parse(fs.readFileSync(seedDataPath, 'utf8'));
+        const businessTypes = fileData.businessTypes || [];
+        
+        // Find matched type or fallback to General Store
+        let matched = businessTypes.find((bt: any) => bt.type.toLowerCase() === businessType.toLowerCase());
+        if (!matched) {
+            matched = businessTypes.find((bt: any) => bt.type === "General Store");
+        }
 
-        // 3. Recursive Seed Function
-        const seedRecursive = async (items: any[], parentId: string | null = null, level: number = 0) => {
-            const results: any[] = [];
-            for (const item of items) {
-                const created = await db.category.create({
-                    data: {
-                        name: item.name,
-                        icon: item.icon || 'Category',
-                        color: item.color || '#94a3b8',
-                        shopId: session.shopId,
-                        parentId: parentId,
-                        level: level,
-                        status: 'ACTIVE'
-                    }
-                });
-                results.push(created);
+        if (matched && matched.categories) {
+            const existing = await db.category.findMany({
+                where: { shopId: session.shopId },
+                select: { name: true }
+            });
+            const existingNames = new Set(existing.map((e: { name: string }) => e.name));
 
-                if (item.children && Array.isArray(item.children) && item.children.length > 0) {
-                    const children = await seedRecursive(item.children, created.id, level + 1);
-                    results.push(...children);
+            for (const catName of matched.categories) {
+                if (!existingNames.has(catName)) {
+                    await db.category.create({
+                        data: {
+                            name: catName,
+                            icon: 'Package',
+                            color: '#7C3AED',
+                            status: 'ACTIVE',
+                            level: 0,
+                            shop: { connect: { id: session.shopId } }
+                        }
+                    });
                 }
             }
-            return results;
-        };
+        }
 
-        const seeded = await seedRecursive(seedData);
         return NextResponse.json({ 
             success: true, 
-            count: seeded.length,
-            message: `Successfully seeded ${seeded.length} categories across ${Math.max(...seeded.map(s => s.level)) + 1} levels.` 
+            message: `Processed categories for ${matched?.type || 'General Store'}.` 
         });
 
     } catch (error: any) {
