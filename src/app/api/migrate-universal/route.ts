@@ -29,7 +29,7 @@ export async function POST() {
 
     // 2. Fetch all shops
     const shops = await db.shop.findMany({ 
-      select: { id: true, shopName: true, businessType: true, businessTypeId: true } 
+      select: { id: true, shopName: true, businessType: true } 
     });
     console.log(`Found ${shops.length} total shops to check...`);
 
@@ -50,13 +50,12 @@ export async function POST() {
       const categoryNames = Object.keys(targetCategories);
       console.log(` > Matched with Dictionary: "${matchingKey}" (${categoryNames.length} categories)`);
 
-      const correctBtId = btMap.get(matchingKey.toLowerCase());
-      if (correctBtId && shop.businessTypeId !== correctBtId) {
+      if (shop.businessType !== matchingKey) {
         await db.shop.update({
           where: { id: shop.id },
-          data: { businessTypeId: correctBtId }
+          data: { businessType: matchingKey }
         });
-        console.log(`   * Synced Shop's businessTypeId to ${correctBtId} (${matchingKey})`);
+        console.log(`   * Synced Shop's businessType to ${matchingKey}`);
       }
 
       // Retrieve their existing categories
@@ -67,13 +66,15 @@ export async function POST() {
       const existingCatsMap = new Map(existingCats.map(c => [c.name.toLowerCase().trim(), c.id]));
 
       // Clean existing subcategories mapping to prevent duplicates on repeat seeding
-      const existingSubcats = await db.subcategory.findMany({
-        where: { categoryId: { in: Array.from(existingCatsMap.values()) } },
-        select: { id: true, subcategoryName: true, categoryId: true }
+      const existingSubcats = await db.category.findMany({
+        where: { parentId: { in: Array.from(existingCatsMap.values()) } },
+        select: { id: true, name: true, parentId: true }
       });
       const existingSubcatsMap = new Map();
       existingSubcats.forEach(sub => {
-        existingSubcatsMap.set(`${sub.categoryId}_${sub.subcategoryName.toLowerCase().trim()}`, sub.id);
+        if (sub.parentId) {
+          existingSubcatsMap.set(`${sub.parentId}_${sub.name.toLowerCase().trim()}`, sub.id);
+        }
       });
 
       // Seed missing categories and subcategories
@@ -88,7 +89,6 @@ export async function POST() {
             data: {
               name: catName,
               shopId: shop.id,
-              businessTypeId: correctBtId || null,
               icon: 'Package',
               color: '#3B82F6', // Standard blue
               status: 'ACTIVE',
@@ -105,10 +105,15 @@ export async function POST() {
         for (const subName of subcatNames) {
           const subKey = `${catId}_${subName.toLowerCase().trim()}`;
           if (!existingSubcatsMap.has(subKey)) {
-            await db.subcategory.create({
+            await db.category.create({
               data: {
-                subcategoryName: subName,
-                categoryId: catId
+                name: subName,
+                shopId: shop.id,
+                parentId: catId,
+                icon: 'Package',
+                color: '#3B82F6',
+                status: 'ACTIVE',
+                level: 1
               }
             });
             insertedSubcats++;

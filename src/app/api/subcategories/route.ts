@@ -16,30 +16,20 @@ export async function GET(req: Request) {
 
     try {
         // Validate the category belongs to the user's business type
-        const shop = await db.shop.findUnique({
-            where: { id: session.shopId },
-            select: { businessTypeId: true },
+        const category = await db.category.findFirst({
+            where: {
+                id: categoryId,
+                shopId: session.shopId,
+            },
         });
 
-        if (shop?.businessTypeId) {
-            const category = await db.category.findFirst({
-                where: {
-                    id: categoryId,
-                    OR: [
-                        { businessTypeId: shop.businessTypeId },
-                        { shopId: session.shopId },
-                    ],
-                },
-            });
-
-            if (!category) {
-                return NextResponse.json({ error: 'Category not found or access denied' }, { status: 403 });
-            }
+        if (!category) {
+            return NextResponse.json({ error: 'Category not found or access denied' }, { status: 403 });
         }
 
-        const subcategories = await db.subcategory.findMany({
-            where: { categoryId },
-            orderBy: { subcategoryName: 'asc' },
+        const subcategories = await db.category.findMany({
+            where: { parentId: categoryId },
+            orderBy: { name: 'asc' },
         });
 
         return NextResponse.json(subcategories);
@@ -73,10 +63,13 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Category not found or access denied' }, { status: 403 });
         }
 
-        const subcategory = await db.subcategory.create({
+        const subcategory = await db.category.create({
             data: {
-                subcategoryName,
-                categoryId,
+                name: subcategoryName,
+                parentId: categoryId,
+                shopId: session.shopId,
+                status: 'ACTIVE',
+                level: 1
             },
         });
 
