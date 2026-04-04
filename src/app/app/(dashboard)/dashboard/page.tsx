@@ -100,28 +100,30 @@ export default function DashboardPage() {
         <div className="col-span-12 md:col-span-8 bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
            <div className="flex items-center justify-between mb-8">
               <h2 className="text-sm font-bold text-gray-700 uppercase tracking-widest">Sales Activity</h2>
-              <div className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">In the last 30 days</div>
+              <Link href="/app/sales-orders" className="text-[11px] text-blue-600 font-bold uppercase tracking-widest hover:underline flex items-center gap-1.5">
+                View All Sales <ArrowUpRight className="w-3 h-3" />
+              </Link>
            </div>
            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
               {[
-                { count: d.salesActivity.toBePacked, label: 'TO BE PACKED', icon: Package, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                { count: d.salesActivity.toBeShipped, label: 'TO BE SHIPPED', icon: Truck, color: 'text-orange-600', bg: 'bg-orange-50' },
-                { count: d.salesActivity.toBeDelivered, label: 'TO BE DELIVERED', icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                { count: d.salesActivity.toBeInvoiced, label: 'TO BE INVOICED', icon: FileText, color: 'text-purple-600', bg: 'bg-purple-50' },
+                { count: d.salesActivity.toBePacked, label: 'TO BE PACKED', icon: Package, color: 'text-indigo-600', bg: 'bg-indigo-50', link: '/app/sales-orders?status=CONFIRMED' },
+                { count: d.salesActivity.toBeShipped, label: 'TO BE SHIPPED', icon: Truck, color: 'text-orange-600', bg: 'bg-orange-50', link: '/app/sales-orders?status=PROCESSING' },
+                { count: d.salesActivity.toBeDelivered, label: 'TO BE DELIVERED', icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', link: '/app/sales-orders?status=SHIPPED' },
+                { count: d.salesActivity.toBeInvoiced, label: 'TO BE INVOICED', icon: FileText, color: 'text-purple-600', bg: 'bg-purple-50', link: '/app/sales-orders?status=PENDING' },
               ].map((item, i) => (
-                <div key={i} className="flex flex-col items-center text-center group cursor-pointer">
+                <Link href={item.link} key={i} className="flex flex-col items-center text-center group cursor-pointer">
                    <p className={`text-3xl font-bold ${item.color} mb-3 transition-transform group-hover:scale-110`}>{item.count}</p>
                    <div className="flex items-center gap-2 mb-2">
                       <item.icon className={`w-3.5 h-3.5 ${item.color}`} />
                       <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest group-hover:text-gray-600 transition-colors">{item.label}</span>
                    </div>
-                </div>
+                </Link>
               ))}
            </div>
         </div>
 
         {/* ─── INVENTORY SUMMARY ─── */}
-        <div className="col-span-12 md:col-span-4 bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
+        <Link href="/app/products" className="col-span-12 md:col-span-4 bg-white rounded-2xl border border-gray-200 p-8 shadow-sm group hover:border-blue-200 transition-all">
            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-widest mb-10">Inventory Summary</h2>
            <div className="space-y-12">
               <div className="flex items-center justify-between">
@@ -129,8 +131,8 @@ export default function DashboardPage() {
                     <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">QUANTITY IN HAND</span>
                     <span className="text-2xl font-bold text-gray-800">{d.inventorySummary.quantityInHand}</span>
                  </div>
-                 <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100">
-                    <History className="w-6 h-6 text-gray-400" />
+                 <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100 group-hover:bg-blue-50 transition-colors">
+                    <History className="w-6 h-6 text-gray-400 group-hover:text-blue-500 transition-colors" />
                  </div>
               </div>
               <div className="flex items-center justify-between border-t border-gray-50 pt-8">
@@ -138,29 +140,29 @@ export default function DashboardPage() {
                     <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">TO BE RECEIVED</span>
                     <span className="text-2xl font-bold text-gray-800">{d.inventorySummary.quantityToBeReceived}</span>
                  </div>
-                 <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100">
-                    <Truck className="w-6 h-6 text-gray-400" />
+                 <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100 group-hover:bg-blue-50 transition-colors">
+                    <Truck className="w-6 h-6 text-gray-400 group-hover:text-blue-500 transition-colors" />
                  </div>
               </div>
            </div>
-        </div>
+        </Link>
 
         {/* ─── PRODUCT DETAILS ─── */}
         <div className="col-span-12 md:col-span-4 bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-widest mb-8">Product Details</h2>
            <div className="space-y-6">
-              <Link href="/app/products" className="flex items-center justify-between p-4 bg-red-50/30 rounded-xl border border-red-50 group hover:border-red-200 transition-all">
+              <Link href="/app/products?filter=low-stock" className="flex items-center justify-between p-4 bg-red-50/30 rounded-xl border border-red-50 group hover:border-red-200 transition-all">
                  <span className="text-[13px] font-semibold text-gray-600">Low Stock Items</span>
                  <span className="text-lg font-bold text-red-600">{d.itemDetails.lowStockItems}</span>
               </Link>
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <Link href="/app/products?tab=groups" className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 group hover:border-blue-100 transition-all">
                  <span className="text-[13px] font-semibold text-gray-600">Item Groups</span>
                  <span className="text-lg font-bold text-gray-800">{d.itemDetails.allItemGroups}</span>
-              </div>
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+              </Link>
+              <Link href="/app/products" className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 group hover:border-blue-100 transition-all">
                  <span className="text-[13px] font-semibold text-gray-600">All Items</span>
                  <span className="text-lg font-bold text-gray-800">{d.itemDetails.allItems}</span>
-              </div>
+              </Link>
            </div>
         </div>
 
@@ -192,10 +194,10 @@ export default function DashboardPage() {
         {/* ─── PURCHASE ORDER & CHANNELS ─── */}
         <div className="col-span-12 bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              <div>
-                 <h2 className="text-sm font-bold text-gray-700 uppercase tracking-widest mb-6">Purchase Order</h2>
-                 <div className="flex items-center gap-6 p-6 bg-[#f8faff] rounded-2xl border border-blue-50">
-                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-50">
+              <Link href="/app/purchase-orders" className="group">
+                 <h2 className="text-sm font-bold text-gray-700 uppercase tracking-widest mb-6 group-hover:text-blue-600 transition-colors">Purchase Order</h2>
+                 <div className="flex items-center gap-6 p-6 bg-[#f8faff] rounded-2xl border border-blue-50 group-hover:border-blue-200 transition-all">
+                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-50 group-hover:scale-110 transition-transform">
                        <ClipboardList className="w-7 h-7 text-blue-600" />
                     </div>
                     <div>
@@ -203,13 +205,13 @@ export default function DashboardPage() {
                         <p className="text-3xl font-bold text-gray-800">{d.purchaseOrder.quantityOrdered}</p>
                     </div>
                  </div>
-              </div>
+              </Link>
               <div>
                  <h2 className="text-sm font-bold text-gray-700 uppercase tracking-widest mb-6">Sales Order by Channels</h2>
                  <div className="space-y-4">
                     {d.salesOrder.channels.map((ch, i) => (
-                      <div key={i} className="flex items-center justify-between border-b border-gray-50 pb-4">
-                         <span className="text-[13px] font-bold text-gray-600 uppercase tracking-wider">{ch.name}</span>
+                      <Link href="/app/sales-orders" key={i} className="flex items-center justify-between border-b border-gray-50 pb-4 group hover:bg-gray-50/50 transition-colors">
+                         <span className="text-[13px] font-bold text-gray-600 uppercase tracking-wider group-hover:text-blue-600 transition-colors">{ch.name}</span>
                          <div className="flex gap-4">
                             <div className="flex flex-col items-end">
                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Confirmed</span>
@@ -220,7 +222,7 @@ export default function DashboardPage() {
                                <span className="px-3 py-1 bg-orange-50 text-orange-700 text-xs font-bold rounded-lg">{ch.pending}</span>
                             </div>
                          </div>
-                      </div>
+                      </Link>
                     ))}
                  </div>
               </div>

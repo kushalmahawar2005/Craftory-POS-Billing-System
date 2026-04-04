@@ -9,8 +9,9 @@ import {
   ArrowRight, Download, FileUp, MoreHorizontal, Printer,
   Eye, Receipt, Calculator, Clock, Calendar, Globe, Target,
   TrendingUp, TrendingDown, DollarSign, PieChart, LineChart, 
-  Activity, Zap, ShieldCheck, Box
+  Activity, Zap, ShieldCheck, Box, Wallet, CreditCard
 } from 'lucide-react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ReportsPage() {
@@ -77,28 +78,40 @@ export default function ReportsPage() {
                   <p className="text-sm text-gray-400 font-medium">Analyze your business performance with detailed metrics and summaries.</p>
                </div>
 
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {(activeTab === 'inventory' ? inventoryReports : salesReports).map((report, idx) => (
-                     <motion.div 
-                        key={idx} 
-                        initial={{ opacity: 0, y: 10 }} 
-                        animate={{ opacity: 1, y: 0 }} 
-                        transition={{ delay: idx * 0.05 }}
-                        className="group bg-white rounded-xl border border-gray-100 p-6 hover:shadow-xl hover:border-blue-100 transition-all cursor-pointer flex items-start gap-5"
-                     >
-                        <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
-                           <report.icon className="w-6 h-6" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                           <h3 className="text-[14px] font-bold text-gray-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight mb-1">{report.title}</h3>
-                           <p className="text-[12px] text-gray-400 leading-relaxed group-hover:text-gray-500 transition-colors">{report.description}</p>
-                           <div className="mt-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <span className="text-[11px] font-black text-blue-600 uppercase tracking-widest">Generate Report</span>
-                              <ArrowRight className="w-3.5 h-3.5 text-blue-600" />
-                           </div>
-                        </div>
-                     </motion.div>
-                  ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {(activeTab === 'inventory' ? inventoryReports : salesReports).map((report, idx) => {
+                     // Determine the link based on report title
+                     let link = '/app/reports';
+                     if (report.title === 'Inventory Details') link = '/app/products';
+                     if (report.title === 'Stock Summary') link = '/app/dashboard';
+                     if (report.title === 'Inventory Valuation') link = '/app/inventory/adjustments';
+                     if (report.title === 'Low Stock Report') link = '/app/products?filter=low-stock';
+                     if (report.title.includes('Sales')) link = '/app/sales-orders';
+                     if (report.title === 'Tax Summary') link = '/app/sales-orders?tab=tax';
+
+                     return (
+                        <Link href={link} key={idx}>
+                           <motion.div 
+                              initial={{ opacity: 0, y: 10 }} 
+                              animate={{ opacity: 1, y: 0 }} 
+                              transition={{ delay: idx * 0.05 }}
+                              className="group bg-white rounded-xl border border-gray-100 p-6 hover:shadow-xl hover:border-blue-100 transition-all cursor-pointer flex items-start gap-5 h-full"
+                           >
+                              <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+                                 <report.icon className="w-6 h-6" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                 <h3 className="text-[14px] font-bold text-gray-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight mb-1">{report.title}</h3>
+                                 <p className="text-[12px] text-gray-400 leading-relaxed group-hover:text-gray-500 transition-colors">{report.description}</p>
+                                 <div className="mt-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <span className="text-[11px] font-black text-blue-600 uppercase tracking-widest">Generate Report</span>
+                                    <ArrowRight className="w-3.5 h-3.5 text-blue-600" />
+                                 </div>
+                              </div>
+                           </motion.div>
+                        </Link>
+                     );
+                  })}
                </div>
             </div>
          </div>
@@ -107,5 +120,3 @@ export default function ReportsPage() {
   );
 }
 
-// Missing imports fix
-import { Wallet, CreditCard } from 'lucide-react';

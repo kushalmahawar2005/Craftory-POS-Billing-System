@@ -7,17 +7,21 @@ import { cookies } from 'next/headers';
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'craftory-pos-jwt-secret-key-2024-secure');
 
 export async function GET(req: Request) {
-    const { searchParams } = new URL(req.url);
+    const { searchParams, host } = new URL(req.url);
+    const protocol = req.headers.get('x-forwarded-proto') || 'http';
+    const currentUrl = `${protocol}://${host}`;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || currentUrl;
+
     const code = searchParams.get('code');
     const error = searchParams.get('error');
 
     if (error || !code) {
-        return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login?error=Google login failed`);
+        return NextResponse.redirect(`${appUrl}/login?error=Google login failed`);
     }
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`;
+    const redirectUri = `${appUrl}/api/auth/google/callback`;
 
     try {
         // 1. Exchange authorization code for token
